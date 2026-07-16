@@ -209,7 +209,7 @@ class ReviewSeeder extends Seeder
                 'book_id' => $books['9784822251468'],
                 'rating' => 3,
                 'comment' => '専門的な内容もありましたが、最後まで面白く読めました。',
-            ]
+            ],
         ];
 
         foreach ($reviews as $review) {

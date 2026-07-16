@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBookRequest;
+use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Genre;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
-
 class BookController extends Controller
 {
-    //　書籍一覧
+    // 書籍一覧
     public function index(): View
     {
         $books = Book::with('genres')
@@ -23,7 +23,7 @@ class BookController extends Controller
         return view('books.index', compact('books'));
     }
 
-    //　書籍登録画面表示
+    // 書籍登録画面表示
     public function create(): View
     {
         $genres = Genre::orderBy('name')->get();
@@ -31,7 +31,7 @@ class BookController extends Controller
         return view('books.create', compact('genres'));
     }
 
-    //　書籍登録
+    // 書籍登録
     public function store(StoreBookRequest $request): RedirectResponse
     {
         $validated = $request->validated();
@@ -50,7 +50,7 @@ class BookController extends Controller
             ->with('success', '書籍を登録しました。');
     }
 
-    //　書籍詳細
+    // 書籍詳細
     public function show(Book $book): View
     {
         $book->load(
@@ -62,27 +62,43 @@ class BookController extends Controller
         return view('books.show', compact('book'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    // 書籍編集画面表示
+    public function edit(Book $book): View
     {
-        //
+        $this->authorize('update', $book);
+
+        $book->load('genres');
+        $genres = Genre::orderBy('name')->get();
+
+        return view('books.edit', compact('book', 'genres'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    // 書籍更新
+    public function update(UpdateBookRequest $request, Book $book): RedirectResponse
     {
-        //
+        $this->authorize('update', $book);
+
+        $validated = $request->validated();
+
+        $genres = $validated['genres'];
+        unset($validated['genres']);
+
+        $book->update($validated);
+
+        $book->genres()->sync($genres);
+
+        return redirect()->route('books.show', $book)
+            ->with('success', '書籍を更新しました。');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    // 書籍削除
+    public function destroy(Book $book): RedirectResponse
     {
-        //
+        $this->authorize('delete', $book);
+
+        $book->delete();
+
+        return redirect()->route('books.index')
+            ->with('success', '書籍を削除しました。');
     }
 }

@@ -35,7 +35,7 @@ return [
     'can' => 'The :attribute field contains an unauthorized value.',
     'confirmed' => ':attributeが一致しません。',
     'current_password' => 'The password is incorrect.',
-    'date' => 'The :attribute field must be a valid date.',
+    'date' => ':attributeは有効な日付を入力してください。',
     'date_equals' => 'The :attribute field must be a date equal to :date.',
     'date_format' => 'The :attribute field must match the format :format.',
     'decimal' => 'The :attribute field must have :decimal decimal places.',
@@ -154,7 +154,7 @@ return [
     'unique' => 'この:attributeは既に使用されています。',
     'uploaded' => 'The :attribute failed to upload.',
     'uppercase' => 'The :attribute field must be uppercase.',
-    'url' => 'The :attribute field must be a valid URL.',
+    'url' => ':attributeはURL形式で入力してください。',
     'ulid' => 'The :attribute field must be a valid ULID.',
     'uuid' => 'The :attribute field must be a valid UUID.',
 
