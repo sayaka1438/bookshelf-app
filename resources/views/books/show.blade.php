@@ -110,141 +110,141 @@
                     <div class="mt-8 pt-8 border-t border-gray-200">
                         <h2 class="text-xl font-bold mb-4">レビュー</h2>
 
-                        {{--
                         @auth
-                        <!-- レビュー投稿フォーム -->
-                        <div class="mb-6 bg-gray-50 p-4 rounded-lg">
-                            <h3 class="font-semibold mb-3">レビューを投稿</h3>
-                            <form action="{{ route('reviews.store', $book) }}" method="POST" novalidate>
-                                @csrf
-                                <div class="mb-4">
-                                    <label for="rating" class="block text-sm font-medium text-gray-700 mb-1">評価</label>
-                                    <select name="rating" id="rating" class="border-gray-300 rounded-md shadow-sm">
-                                        <option value="">選択してください</option>
-                                        @for($i = 5; $i >= 1; $i--)
-                                        <option value="{{ $i }}" {{ old('rating')==$i ? 'selected' : '' }}>
-                                            {{ str_repeat('★', $i) }}{{ str_repeat('☆', 5 - $i) }} ({{ $i }})
-                                        </option>
-                                        @endfor
-                                    </select>
-                                    @error('rating')
-                                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div class="mb-4">
-                                    <label for="comment"
-                                        class="block text-sm font-medium text-gray-700 mb-1">コメント</label>
-                                    <textarea name="comment" id="comment" rows="3"
-                                        class="border-gray-300 rounded-md shadow-sm w-full"
-                                        placeholder="この書籍の感想を書いてください">{{ old('comment') }}</textarea>
-                                    @error('comment')
-                                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="submit"
-                                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                        投稿する
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            <!-- レビュー投稿フォーム -->
+                            <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                                <h3 class="font-semibold mb-3">レビューを投稿</h3>
+                                <form action="{{ route('reviews.store', $book) }}" method="POST" novalidate>
+                                    @csrf
+                                    <div class="mb-4">
+                                        <label for="rating" class="block text-sm font-medium text-gray-700 mb-1">評価</label>
+                                        <select name="rating" id="rating" class="border-gray-300 rounded-md shadow-sm">
+                                            <option value="">選択してください</option>
+                                            @for($i = 5; $i >= 1; $i--)
+                                                <option value="{{ $i }}" {{ old('rating') == $i ? 'selected' : '' }}>
+                                                    {{ str_repeat('★', $i) }}{{ str_repeat('☆', 5 - $i) }} ({{ $i }})
+                                                </option>
+                                            @endfor
+                                        </select>
+                                        @error('rating')
+                                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="comment"
+                                            class="block text-sm font-medium text-gray-700 mb-1">コメント</label>
+                                        <textarea name="comment" id="comment" rows="3"
+                                            class="border-gray-300 rounded-md shadow-sm w-full"
+                                            placeholder="この書籍の感想を書いてください">{{ old('comment') }}</textarea>
+                                        @error('comment')
+                                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <button type="submit"
+                                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                            投稿する
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         @else
-                        <p class="mb-6 text-gray-600">
-                            レビューを投稿するには<a href="{{ route('login') }}"
-                                class="text-blue-600 hover:underline">ログイン</a>してください。
-                        </p>
+                            <p class="mb-6 text-gray-600">
+                                レビューを投稿するには<a href="{{ route('login') }}"
+                                    class="text-blue-600 hover:underline">ログイン</a>してください。
+                            </p>
                         @endauth
 
                         <!-- レビュー一覧 -->
                         @if($book->reviews->count() > 0)
-                        <div class="space-y-4">
-                            @foreach($book->reviews as $review)
-                            <div class="border rounded-lg p-4">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div>
-                                        <span class="font-semibold">{{ $review->user->name }}</span>
-                                        <span class="text-yellow-500 ml-2">
-                                            {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 -
-                                            $review->rating) }}
-                                        </span>
-                                    </div>
-                                    <span class="text-sm text-gray-500">{{ $review->created_at->format('Y/m/d')
-                                        }}</span>
-                                </div>
-                                @if($review->comment)
-                                <p class="text-gray-700">{{ $review->comment }}</p>
-                                @endif
+                            <div class="space-y-4">
+                                @foreach($book->reviews as $review)
+                                                    <div class="border rounded-lg p-4">
+                                                        <div class="flex items-center justify-between mb-2">
+                                                            <div>
+                                                                <span class="font-semibold">{{ $review->user->name }}</span>
+                                                                <span class="text-yellow-500 ml-2">
+                                                                    {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 -
+                                    $review->rating) }}
+                                                                </span>
+                                                            </div>
+                                                            <span class="text-sm text-gray-500">{{ $review->created_at->format('Y/m/d')
+                                                                }}</span>
+                                                        </div>
+                                                        @if($review->comment)
+                                                            <p class="text-gray-700">{{ $review->comment }}</p>
+                                                        @endif
 
-                                <div class="mt-3 flex items-center justify-between">
-                                    <!-- いいねボタン -->
-                                    @auth
-                                    @if(Auth::user()->likedReviews->contains($review->id))
-                                    <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline"
-                                        novalidate>
-                                        @csrf
-                                        <button type="submit"
-                                            class="text-blue-500 hover:text-blue-700 text-sm flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1"
-                                                fill="currentColor" viewBox="0 0 20 20">
-                                                <path
-                                                    d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                                            </svg>
-                                            いいね済み ({{ $review->likedByUsers->count() }})
-                                        </button>
-                                    </form>
-                                    @else
-                                    <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline"
-                                        novalidate>
-                                        @csrf
-                                        <button type="submit"
-                                            class="text-gray-500 hover:text-blue-500 text-sm flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none"
-                                                stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                                            </svg>
-                                            いいね ({{ $review->likedByUsers->count() }})
-                                        </button>
-                                    </form>
-                                    @endif
-                                    @else
-                                    <a href="{{ route('login') }}"
-                                        class="text-gray-500 hover:text-blue-500 text-sm flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none"
-                                            stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                                        </svg>
-                                        いいね ({{ $review->likedByUsers->count() }})
-                                    </a>
-                                    @endauth
+                                                        {{--
+                                                        <div class="mt-3 flex items-center justify-between">
+                                                            <!-- いいねボタン -->
+                                                            @auth
+                                                            @if(Auth::user()->likedReviews->contains($review->id))
+                                                            <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline"
+                                                                novalidate>
+                                                                @csrf
+                                                                <button type="submit"
+                                                                    class="text-blue-500 hover:text-blue-700 text-sm flex items-center">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1"
+                                                                        fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path
+                                                                            d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                                                                    </svg>
+                                                                    いいね済み ({{ $review->likedByUsers->count() }})
+                                                                </button>
+                                                            </form>
+                                                            @else
+                                                            <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline"
+                                                                novalidate>
+                                                                @csrf
+                                                                <button type="submit"
+                                                                    class="text-gray-500 hover:text-blue-500 text-sm flex items-center">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none"
+                                                                        stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                                            d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                                                                    </svg>
+                                                                    いいね ({{ $review->likedByUsers->count() }})
+                                                                </button>
+                                                            </form>
+                                                            @endif
+                                                            @else
+                                                            <a href="{{ route('login') }}"
+                                                                class="text-gray-500 hover:text-blue-500 text-sm flex items-center">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none"
+                                                                    stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                                                                </svg>
+                                                                いいね ({{ $review->likedByUsers->count() }})
+                                                            </a>
+                                                            @endauth
+                                                            --}}
 
-                                    <!-- 編集・削除ボタン -->
-                                    <div class="flex items-center gap-2">
-                                        @can('update', $review)
-                                        <a href="{{ route('reviews.edit', $review) }}"
-                                            class="text-sm text-gray-500 hover:text-gray-700">編集</a>
-                                        @endcan
-                                        @can('delete', $review)
-                                        <form action="{{ route('reviews.destroy', $review) }}" method="POST"
-                                            onsubmit="return confirm('本当に削除しますか？')" novalidate>
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="text-sm text-red-500 hover:text-red-700">削除</button>
-                                        </form>
-                                        @endcan
-                                    </div>
-                                </div>
+                                                            <!-- 編集・削除ボタン -->
+                                                            <div class="flex items-center gap-2">
+                                                                @can('update', $review)
+                                                                    <a href="{{ route('reviews.edit', $review) }}"
+                                                                        class="text-sm text-gray-500 hover:text-gray-700">編集</a>
+                                                                @endcan
+                                                                @can('delete', $review)
+                                                                    <form action="{{ route('reviews.destroy', $review) }}" method="POST"
+                                                                        onsubmit="return confirm('本当に削除しますか？')" novalidate>
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit"
+                                                                            class="text-sm text-red-500 hover:text-red-700">削除</button>
+                                                                    </form>
+                                                                @endcan
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                @endforeach
                             </div>
-                            @endforeach
-                        </div>
                         @else
-                        <p class="text-gray-500">まだレビューはありません。</p>
+                            <p class="text-gray-500">まだレビューはありません。</p>
                         @endif
                     </div>
-                    --}}
                 </div>
             </div>
 
