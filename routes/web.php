@@ -19,6 +19,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/books/{book}/favorites', [FavoriteController::class, 'toggle'])
         ->name('favorites.toggle');
+
+    Route::get('/favorites', [FavoriteController::class, 'index'])
+        ->name('favorites.index');
 });
 
 Route::resource('books', BookController::class)
