@@ -49,7 +49,7 @@ class FavoriteSeeder extends Seeder
             $user = User::findOrFail($users[$email]);
 
             $bookIds = collect($isbnList)
-                ->map(fn(string $isbn) => $books[$isbn]);
+                ->map(fn (string $isbn) => $books[$isbn]);
 
             $user->favoriteBooks()->syncWithoutDetaching($bookIds);
         }

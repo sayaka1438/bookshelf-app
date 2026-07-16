@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\BookController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/books');
 
-// 仮ルート
 Route::middleware('auth')->group(function () {
-    Route::get('/books', fn () => '書籍一覧（準備中）')->name('books.index');
+    Route::resource('books', BookController::class)
+        ->except(['index', 'show']);
 });
+
+Route::resource('books', BookController::class)
+    ->only(['index', 'show']);
