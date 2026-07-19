@@ -61,11 +61,17 @@ class GenreController extends Controller
             ->with('success', 'ジャンルを更新しました。');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    // ジャンル削除
+    public function destroy(Genre $genre): RedirectResponse
     {
-        //
+        if ($genre->books()->exists()) {
+            return redirect()->route('genres.index')
+                ->with('error', 'このジャンルには書籍が登録されているため、削除できません。');
+        }
+
+        $genre->delete();
+
+        return redirect()->route('genres.index')
+            ->with('success', 'ジャンルを削除しました。');
     }
 }
