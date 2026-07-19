@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreGenreRequest;
+use App\Http\Requests\UpdateGenreRequest;
 use App\Models\Genre;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class GenreController extends Controller
@@ -18,20 +20,19 @@ class GenreController extends Controller
         return view('genres.index', compact('genres'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    // ジャンル登録画面表示
+    public function create(): View
     {
-        //
+        return view('genres.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    // ジャンル登録
+    public function store(StoreGenreRequest $request): RedirectResponse
     {
-        //
+        Genre::create($request->validated());
+
+        return redirect()->route('genres.index')
+            ->with('success', 'ジャンルを登録しました。');
     }
 
     // ジャンル別書籍一覧(ジャンル詳細)
@@ -45,20 +46,19 @@ class GenreController extends Controller
         return view('genres.show', compact('genre', 'books'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    // ジャンル編集画面表示
+    public function edit(Genre $genre): View
     {
-        //
+        return view('genres.edit', compact('genre'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    // ジャンル更新
+    public function update(UpdateGenreRequest $request, Genre $genre): RedirectResponse
     {
-        //
+        $genre->update($request->validated());
+
+        return redirect()->route('genres.index')
+            ->with('success', 'ジャンルを更新しました。');
     }
 
     /**
