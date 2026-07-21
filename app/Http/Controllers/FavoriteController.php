@@ -29,7 +29,7 @@ class FavoriteController extends Controller
     {
         $books = auth()->user()
             ->favoriteBooks()
-            ->latest()
+            ->latest('favorites.created_at')
             ->paginate(10);
 
         return view('favorites.index', compact('books'));
