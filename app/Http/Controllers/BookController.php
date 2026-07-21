@@ -53,11 +53,13 @@ class BookController extends Controller
     // 書籍詳細
     public function show(Book $book): View
     {
-        $book->load(
+        $book->load([
             'genres',
-            'reviews.user',
-            'reviews.likedByUsers',
-        );
+            'reviews' => function ($query) {
+                $query->latest('created_at')
+                    ->with('user', 'likedByUsers');
+            },
+        ]);
 
         return view('books.show', compact('book'));
     }

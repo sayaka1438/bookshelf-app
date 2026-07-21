@@ -40,7 +40,7 @@ class GenreController extends Controller
     {
         $books = $genre->books()
             ->with('genres')
-            ->latest()
+            ->orderBy('title')
             ->paginate(10);
 
         return view('genres.show', compact('genre', 'books'));
