@@ -11,6 +11,7 @@ use App\Http\Resources\BookResource;
 use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class BookController extends Controller
 {
@@ -92,5 +93,13 @@ class BookController extends Controller
         $book->load('genres');
 
         return new BookDetailResource($book);
+    }
+
+    // 書籍削除API
+    public function destroy(Book $book): Response
+    {
+        $book->delete();
+
+        return response()->noContent();
     }
 }
