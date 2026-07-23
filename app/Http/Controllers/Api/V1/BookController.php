@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\IndexBookRequest;
+use App\Http\Requests\Api\V1\StoreBookRequest;
+use App\Http\Requests\Api\V1\UpdateBookRequest;
 use App\Http\Resources\BookDetailResource;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class BookController extends Controller
 {
+    // 書籍一覧API
     public function index(IndexBookRequest $request): AnonymousResourceCollection
     {
         $validated = $request->validated();
@@ -43,12 +47,49 @@ class BookController extends Controller
         return BookResource::collection($books);
     }
 
+    // 書籍詳細API
     public function show(Book $book): BookDetailResource
     {
         $book->load(
             'genres',
             'reviews.user',
         );
+
+        return new BookDetailResource($book);
+    }
+
+    // 書籍登録API
+    public function store(StoreBookRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $genres = $validated['genres'];
+        unset($validated['genres']);
+
+        $book = Book::create($validated);
+
+        $book->genres()->sync($genres);
+
+        $book->load('genres');
+
+        return (new BookDetailResource($book))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    // 書籍更新API
+    public function update(UpdateBookRequest $request, Book $book): BookDetailResource
+    {
+        $validated = $request->validated();
+
+        $genres = $validated['genres'];
+        unset($validated['genres']);
+
+        $book->update($validated);
+
+        $book->genres()->sync($genres);
+
+        $book->load('genres');
 
         return new BookDetailResource($book);
     }
