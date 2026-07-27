@@ -15,12 +15,13 @@ class BookControllerTest extends TestCase
     /** @test */
     public function 未認証ユーザーは書籍一覧を取得できる(): void
     {
-        $book = Book::factory()->create();
+        Book::factory()->create();
 
         $response = $this->get(route('books.index'));
 
         $response->assertOk();
         $response->assertViewIs('books.index');
+
         $response->assertViewHas('books');
     }
 
@@ -63,6 +64,7 @@ class BookControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('books.show');
+
         $response->assertViewHas('book', $book);
     }
 
@@ -79,7 +81,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 存在しない書籍_i_dで詳細画面にアクセスすると404エラーになる(): void
+    public function 存在しない書籍idで詳細画面にアクセスすると404エラーになる(): void
     {
         $response = $this->get(route('books.show', 999999));
 
@@ -90,7 +92,7 @@ class BookControllerTest extends TestCase
     public function 認証済みユーザーは書籍登録画面を表示できる(): void
     {
         $user = User::factory()->create();
-        Genre::factory()->count(3)->create();
+        Genre::factory()->create();
 
         $response = $this->actingAs($user)
             ->get(route('books.create'));
@@ -124,11 +126,11 @@ class BookControllerTest extends TestCase
         $response->assertSessionHas('success', '書籍を登録しました。');
 
         $this->assertDatabaseHas('books', [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '1234567890123',
-            'published_date' => '2026-07-23',
             'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
+            'isbn' => $data['isbn'],
+            'published_date' => $data['published_date'],
         ]);
 
         foreach ($genres as $genre) {
@@ -145,8 +147,26 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => '',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('title');
+    }
+
+    /** @test */
+    public function 書籍登録時にタイトルは1文字でも登録できる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
         $data = [
-            'title' => '',
+            'title' => 'あ',
             'author' => '著者名',
             'isbn' => '1234567890123',
             'published_date' => '2026-07-23',
@@ -155,6 +175,66 @@ class BookControllerTest extends TestCase
 
         $response = $this->actingAs($user)
             ->post(route('books.store'), $data);
+
+        $book = Book::where('isbn', $data['isbn'])->firstOrFail();
+
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', '書籍を登録しました。');
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
+            'isbn' => $data['isbn'],
+            'published_date' => $data['published_date'],
+        ]);
+    }
+
+    /** @test */
+    public function 書籍登録時にタイトルは255文字まで登録できる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $data = [
+            'title' => str_repeat('あ', 255),
+            'author' => '著者名',
+            'isbn' => '1234567890123',
+            'published_date' => '2026-07-23',
+            'genres' => [$genre->id],
+        ];
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), $data);
+
+        $book = Book::where('isbn', $data['isbn'])->firstOrFail();
+
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', '書籍を登録しました。');
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
+            'isbn' => $data['isbn'],
+            'published_date' => $data['published_date'],
+        ]);
+    }
+
+    /** @test */
+    public function 書籍登録時にタイトルが256文字以上だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => str_repeat('あ', 256),
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
 
         $response->assertSessionHasErrors('title');
     }
@@ -165,9 +245,27 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('author');
+    }
+
+    /** @test */
+    public function 書籍登録時に著者名は1文字でも登録できる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
         $data = [
             'title' => 'テストタイトル',
-            'author' => '',
+            'author' => 'あ',
             'isbn' => '1234567890123',
             'published_date' => '2026-07-23',
             'genres' => [$genre->id],
@@ -176,25 +274,141 @@ class BookControllerTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('books.store'), $data);
 
-        $response->assertSessionHasErrors('author');
+        $book = Book::where('isbn', $data['isbn'])->firstOrFail();
+
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', '書籍を登録しました。');
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
+            'isbn' => $data['isbn'],
+            'published_date' => $data['published_date'],
+        ]);
     }
 
     /** @test */
-    public function 書籍登録時に_isb_nが空だとバリデーションエラーになる(): void
+    public function 書籍登録時に著者名は255文字まで登録できる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
         $data = [
             'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '',
+            'author' => str_repeat('あ', 255),
+            'isbn' => '1234567890123',
             'published_date' => '2026-07-23',
             'genres' => [$genre->id],
         ];
 
         $response = $this->actingAs($user)
             ->post(route('books.store'), $data);
+
+        $book = Book::where('isbn', $data['isbn'])->firstOrFail();
+
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', '書籍を登録しました。');
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
+            'isbn' => $data['isbn'],
+            'published_date' => $data['published_date'],
+        ]);
+    }
+
+    /** @test */
+    public function 書籍登録時に著者名が256文字以上だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => str_repeat('あ', 256),
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('author');
+    }
+
+    /** @test */
+    public function 書籍登録時にisbnが空だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '',
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('isbn');
+    }
+
+    /** @test */
+    public function 書籍登録時にisbnが12桁だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '123456789012',
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('isbn');
+    }
+
+    /** @test */
+    public function 書籍登録時にisbnが14桁だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '12345678901234',
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('isbn');
+    }
+
+    /** @test */
+    public function 書籍登録時にすでに登録されているisbnだとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $existingBook = Book::factory()->create([
+            'isbn' => '1234567890123',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => $existingBook->isbn,
+                'published_date' => '2026-07-23',
+                'genres' => [$genre->id],
+            ]);
 
         $response->assertSessionHasErrors('isbn');
     }
@@ -205,80 +419,16 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
-        $data = [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '1234567890123',
-            'published_date' => '',
-            'genres' => [$genre->id],
-        ];
-
         $response = $this->actingAs($user)
-            ->post(route('books.store'), $data);
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '',
+                'genres' => [$genre->id],
+            ]);
 
         $response->assertSessionHasErrors('published_date');
-    }
-
-    /** @test */
-    public function 書籍登録時にジャンルが未選択だとバリデーションエラーになる(): void
-    {
-        $user = User::factory()->create();
-
-        $data = [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '1234567890123',
-            'published_date' => '2026-07-23',
-            'genres' => [],
-        ];
-
-        $response = $this->actingAs($user)
-            ->post(route('books.store'), $data);
-
-        $response->assertSessionHasErrors('genres');
-    }
-
-    /** @test */
-    public function 書籍登録時に_isb_nが14桁だとバリデーションエラーになる(): void
-    {
-        $user = User::factory()->create();
-        $genre = Genre::factory()->create();
-
-        $data = [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '12345678901234',
-            'published_date' => '2026-07-23',
-            'genres' => [$genre->id],
-        ];
-
-        $response = $this->actingAs($user)
-            ->post(route('books.store'), $data);
-
-        $response->assertSessionHasErrors('isbn');
-    }
-
-    /** @test */
-    public function 書籍登録時にすでに登録されている_isb_nだとバリデーションエラーになる(): void
-    {
-        $user = User::factory()->create();
-        $genre = Genre::factory()->create();
-        $existingBook = Book::factory()->create([
-            'isbn' => '1234567890123',
-        ]);
-
-        $data = [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => $existingBook->isbn,
-            'published_date' => '2026-07-23',
-            'genres' => [$genre->id],
-        ];
-
-        $response = $this->actingAs($user)
-            ->post(route('books.store'), $data);
-
-        $response->assertSessionHasErrors('isbn');
     }
 
     /** @test */
@@ -287,16 +437,32 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
-        $data = [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '1234567890123',
-            'published_date' => '不正な値',
-            'genres' => [$genre->id],
-        ];
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '不正な値',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('published_date');
+    }
+
+    /** @test */
+    public function 書籍登録時に出版日が存在しない日付だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
 
         $response = $this->actingAs($user)
-            ->post(route('books.store'), $data);
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-02-30',
+                'genres' => [$genre->id],
+            ]);
 
         $response->assertSessionHasErrors('published_date');
     }
@@ -319,51 +485,154 @@ class BookControllerTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('books.store'), $data);
 
+        $book = Book::where('isbn', $data['isbn'])->firstOrFail();
+
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', '書籍を登録しました。');
+
         $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
             'isbn' => $data['isbn'],
+            'published_date' => $data['published_date'],
+            'description' => $data['description'],
         ]);
     }
 
     /** @test */
-    public function 書籍登録時に説明は1001文字以上だとバリデーションエラーになる(): void
+    public function 書籍登録時に説明が1001文字以上だとバリデーションエラーになる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
-        $data = [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '1234567890123',
-            'published_date' => '2026-07-23',
-            'description' => str_repeat('あ', 1001),
-            'genres' => [$genre->id],
-        ];
-
         $response = $this->actingAs($user)
-            ->post(route('books.store'), $data);
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'description' => str_repeat('あ', 1001),
+                'genres' => [$genre->id],
+            ]);
 
         $response->assertSessionHasErrors('description');
     }
 
     /** @test */
-    public function 書籍登録時に画像_ur_lが不正な形式だとバリデーションエラーになる(): void
+    public function 書籍登録時に画像urlが不正な形式だとバリデーションエラーになる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'image_url' => '不正な形式',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertSessionHasErrors('image_url');
+    }
+
+    /** @test */
+    public function 書籍登録時に画像urlは255文字まで登録できる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $prefix = 'https://example.com/';
+        $imageUrl = $prefix.str_repeat('a', 255 - strlen($prefix));
 
         $data = [
             'title' => 'テストタイトル',
             'author' => '著者名',
             'isbn' => '1234567890123',
             'published_date' => '2026-07-23',
-            'image_url' => '不正な形式',
+            'image_url' => $imageUrl,
             'genres' => [$genre->id],
         ];
+
+        $this->assertSame(255, strlen($imageUrl));
 
         $response = $this->actingAs($user)
             ->post(route('books.store'), $data);
 
+        $book = Book::where('isbn', $data['isbn'])->firstOrFail();
+
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', '書籍を登録しました。');
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
+            'isbn' => $data['isbn'],
+            'published_date' => $data['published_date'],
+            'image_url' => $data['image_url'],
+        ]);
+    }
+
+    /** @test */
+    public function 書籍登録時に画像urlが256文字以上だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $prefix = 'https://example.com/';
+        $imageUrl = $prefix.str_repeat('a', 256 - strlen($prefix));
+
+        $this->assertSame(256, strlen($imageUrl));
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'image_url' => $imageUrl,
+                'genres' => [$genre->id],
+            ]);
+
         $response->assertSessionHasErrors('image_url');
+
+    }
+
+    /** @test */
+    public function 書籍登録時にジャンルが未選択だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'genres' => [],
+            ]);
+
+        $response->assertSessionHasErrors('genres');
+    }
+
+    /** @test */
+    public function 書籍登録時にジャンルidが文字列だとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'genres' => ['文字列'],
+            ]);
+
+        $response->assertSessionHasErrors('genres.0');
     }
 
     /** @test */
@@ -371,16 +640,14 @@ class BookControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $data = [
-            'title' => 'テストタイトル',
-            'author' => '著者名',
-            'isbn' => '1234567890123',
-            'published_date' => '2026-07-23',
-            'genres' => [999999],
-        ];
-
         $response = $this->actingAs($user)
-            ->post(route('books.store'), $data);
+            ->post(route('books.store'), [
+                'title' => 'テストタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-07-23',
+                'genres' => [999999],
+            ]);
 
         $response->assertSessionHasErrors('genres.0');
     }
@@ -414,17 +681,17 @@ class BookControllerTest extends TestCase
         $otherUser = User::factory()->create();
 
         $book = Book::factory()->create([
-            'user_id' => $user->id,
+            'user_id' => $otherUser->id,
         ]);
 
-        $response = $this->actingAs($otherUser)
+        $response = $this->actingAs($user)
             ->get(route('books.edit', $book));
 
         $response->assertForbidden();
     }
 
     /** @test */
-    public function 存在しない書籍_i_dで編集画面にアクセスすると404エラーになる(): void
+    public function 存在しない書籍idで編集画面にアクセスすると404エラーになる(): void
     {
         $user = User::factory()->create();
 
@@ -439,8 +706,10 @@ class BookControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
+
         $book = Book::factory()->create([
             'user_id' => $user->id,
+            'title' => '更新前のタイトル',
         ]);
 
         $response = $this->actingAs($user)
@@ -475,8 +744,8 @@ class BookControllerTest extends TestCase
         $genre = Genre::factory()->create();
 
         $book = Book::factory()->create([
-            'title' => '更新前のタイトル',
             'user_id' => $user->id,
+            'title' => '更新前のタイトル',
         ]);
 
         $response = $this->actingAs($otherUser)
@@ -501,6 +770,7 @@ class BookControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
+
         $book = Book::factory()->create([
             'user_id' => $user->id,
         ]);
@@ -508,7 +778,7 @@ class BookControllerTest extends TestCase
         $response = $this->actingAs($user)
             ->put(route('books.update', $book), [
                 'title' => '',
-                'author' => '更新後の著者名',
+                'author' => $book->author,
                 'isbn' => $book->isbn,
                 'published_date' => $book->published_date,
                 'genres' => [$genre->id],
@@ -523,12 +793,14 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 書籍更新時に自分自身の_isb_nは重複エラーにならない(): void
+    public function 書籍更新時に自分自身のisbnは重複エラーにならない(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
+
         $book = Book::factory()->create([
             'user_id' => $user->id,
+            'title' => '更新前のタイトル',
         ]);
 
         $response = $this->actingAs($user)
@@ -551,7 +823,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 書籍更新時に他の書籍と同じ_isb_nだとバリデーションエラーになる(): void
+    public function 書籍更新時に他の書籍と同じisbnだとバリデーションエラーになる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
@@ -653,7 +925,6 @@ class BookControllerTest extends TestCase
         $otherUser = User::factory()->create();
 
         $book = Book::factory()->create([
-            'title' => '削除前のタイトル',
             'user_id' => $otherUser->id,
         ]);
 
@@ -664,7 +935,6 @@ class BookControllerTest extends TestCase
 
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
-            'title' => '削除前のタイトル',
         ]);
     }
 }
