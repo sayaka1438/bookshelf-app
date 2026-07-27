@@ -19,13 +19,13 @@ class BookFactory extends Factory
     public function definition(): array
     {
         return [
+            'user_id' => User::factory(),
             'title' => fake()->words(3, true),
             'author' => fake()->name(),
             'isbn' => fake()->unique()->isbn13(),
             'published_date' => fake()->date(),
             'description' => fake()->paragraph(),
             'image_url' => fake()->imageUrl(),
-            'user_id' => User::factory(),
         ];
     }
 }

@@ -40,8 +40,8 @@ class BookController extends Controller
         unset($validated['genres']);
 
         $book = Book::create([
-            ...$validated,
             'user_id' => auth()->id(),
+            ...$validated,
         ]);
 
         $book->genres()->sync($genres);
