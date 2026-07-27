@@ -13,13 +13,13 @@ class Book extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'title',
         'author',
         'isbn',
         'published_date',
         'description',
         'image_url',
-        'user_id',
     ];
 
     public function user(): BelongsTo

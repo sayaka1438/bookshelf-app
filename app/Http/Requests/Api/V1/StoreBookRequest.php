@@ -23,6 +23,7 @@ class StoreBookRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => 'required|integer|exists:users,id',
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'isbn' => 'required|string|regex:/^\d{13}$/|unique:books,isbn',
@@ -31,13 +32,13 @@ class StoreBookRequest extends FormRequest
             'image_url' => 'nullable|url|max:255',
             'genres' => 'required|array|min:1',
             'genres.*' => 'integer|exists:genres,id',
-            'user_id' => 'required|integer|exists:users,id',
         ];
     }
 
     public function attributes(): array
     {
         return [
+            'user_id' => '登録者ID',
             'title' => 'タイトル',
             'author' => '著者名',
             'isbn' => 'ISBN',
@@ -45,20 +46,19 @@ class StoreBookRequest extends FormRequest
             'description' => '説明',
             'image_url' => '画像URL',
             'genres' => 'ジャンル',
-            'user_id' => '登録者ID',
         ];
     }
 
     public function messages(): array
     {
         return [
+            'user_id.exists' => '指定された登録者IDは存在しません。',
             'isbn.regex' => 'ISBNは13桁で入力してください。',
             'isbn.unique' => 'このISBNはすでに登録されています。',
             'genres.required' => 'ジャンルを指定してください。',
             'genres.min' => 'ジャンルを指定してください。',
             'genres.*.integer' => '指定されたジャンルが正しくありません。',
             'genres.*.exists' => '指定されたジャンルは存在しません。',
-            'user_id.exists' => '指定された登録者IDは存在しません。',
         ];
     }
 }
