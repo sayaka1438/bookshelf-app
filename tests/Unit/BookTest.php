@@ -20,13 +20,13 @@ class BookTest extends TestCase
         $book = new Book;
 
         $this->assertEquals([
+            'user_id',
             'title',
             'author',
             'isbn',
             'published_date',
             'description',
             'image_url',
-            'user_id',
         ], $book->getFillable());
     }
 

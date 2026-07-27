@@ -18,11 +18,13 @@ class ReviewControllerTest extends TestCase
         $user = User::factory()->create();
         $book = Book::factory()->create();
 
+        $data = [
+            'rating' => 3,
+            'comment' => 'テストコメント',
+        ];
+
         $response = $this->actingAs($user)
-            ->post(route('reviews.store', $book), [
-                'rating' => 3,
-                'comment' => 'テストコメント',
-            ]);
+            ->post(route('reviews.store', $book), $data);
 
         $response->assertRedirect(route('books.show', $book));
         $response->assertSessionHas('success', 'レビューを投稿しました。');
@@ -30,8 +32,8 @@ class ReviewControllerTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'rating' => 3,
-            'comment' => 'テストコメント',
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
         ]);
     }
 
@@ -86,11 +88,13 @@ class ReviewControllerTest extends TestCase
         $user = User::factory()->create();
         $book = Book::factory()->create();
 
+        $data = [
+            'rating' => 1,
+            'comment' => 'テストコメント',
+        ];
+
         $response = $this->actingAs($user)
-            ->post(route('reviews.store', $book), [
-                'rating' => 1,
-                'comment' => 'テストコメント',
-            ]);
+            ->post(route('reviews.store', $book), $data);
 
         $response->assertRedirect(route('books.show', $book));
         $response->assertSessionHas('success', 'レビューを投稿しました。');
@@ -98,8 +102,8 @@ class ReviewControllerTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'rating' => 1,
-            'comment' => 'テストコメント',
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
         ]);
     }
 
@@ -109,11 +113,13 @@ class ReviewControllerTest extends TestCase
         $user = User::factory()->create();
         $book = Book::factory()->create();
 
+        $data = [
+            'rating' => 5,
+            'comment' => 'テストコメント',
+        ];
+
         $response = $this->actingAs($user)
-            ->post(route('reviews.store', $book), [
-                'rating' => 5,
-                'comment' => 'テストコメント',
-            ]);
+            ->post(route('reviews.store', $book), $data);
 
         $response->assertRedirect(route('books.show', $book));
         $response->assertSessionHas('success', 'レビューを投稿しました。');
@@ -121,8 +127,8 @@ class ReviewControllerTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'rating' => 5,
-            'comment' => 'テストコメント',
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
         ]);
     }
 
@@ -147,11 +153,13 @@ class ReviewControllerTest extends TestCase
         $user = User::factory()->create();
         $book = Book::factory()->create();
 
+        $data = [
+            'rating' => 3,
+            'comment' => '',
+        ];
+
         $response = $this->actingAs($user)
-            ->post(route('reviews.store', $book), [
-                'rating' => 3,
-                'comment' => '',
-            ]);
+            ->post(route('reviews.store', $book), $data);
 
         $response->assertRedirect(route('books.show', $book));
         $response->assertSessionHas('success', 'レビューを投稿しました。');
@@ -159,7 +167,7 @@ class ReviewControllerTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'rating' => 3,
+            'rating' => $data['rating'],
             'comment' => null,
         ]);
     }
@@ -170,11 +178,13 @@ class ReviewControllerTest extends TestCase
         $user = User::factory()->create();
         $book = Book::factory()->create();
 
+        $data = [
+            'rating' => 3,
+            'comment' => str_repeat('あ', 1000),
+        ];
+
         $response = $this->actingAs($user)
-            ->post(route('reviews.store', $book), [
-                'rating' => 3,
-                'comment' => str_repeat('あ', 1000),
-            ]);
+            ->post(route('reviews.store', $book), $data);
 
         $response->assertRedirect(route('books.show', $book));
         $response->assertSessionHas('success', 'レビューを投稿しました。');
@@ -182,8 +192,8 @@ class ReviewControllerTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'rating' => 3,
-            'comment' => str_repeat('あ', 1000),
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
         ]);
     }
 
@@ -266,7 +276,7 @@ class ReviewControllerTest extends TestCase
     }
 
     /** @test */
-    public function 存在しないレビュー_i_dで編集画面にアクセスすると404エラーになる(): void
+    public function 存在しないレビューidで編集画面にアクセスすると404エラーになる(): void
     {
         $user = User::factory()->create();
 
@@ -356,7 +366,7 @@ class ReviewControllerTest extends TestCase
 
         $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
-            'rating' => 3,
+            'rating' => $review->rating,
             'comment' => '更新前のコメント',
         ]);
     }
@@ -384,7 +394,7 @@ class ReviewControllerTest extends TestCase
 
         $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
-            'rating' => 3,
+            'rating' => $review->rating,
             'comment' => '更新前のコメント',
         ]);
     }
