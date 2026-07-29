@@ -14,7 +14,7 @@ class BookControllerTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function ゲストユーザーはページネーションされた書籍一覧を取得できる(): void
+    public function 未認証ユーザーはページネーションされた書籍一覧を取得できる(): void
     {
         Book::factory()->count(15)->create();
 
@@ -27,7 +27,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function ゲストユーザーは正しいレスポンス構造で書籍一覧を取得できる(): void
+    public function 未認証ユーザーは正しいレスポンス構造で書籍一覧を取得できる(): void
     {
         $book = Book::factory()->create();
         $genre = Genre::factory()->create();
@@ -58,7 +58,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function ゲストユーザーは正しい書籍情報を取得できる(): void
+    public function 未認証ユーザーは正しい書籍情報を取得できる(): void
     {
         $book = Book::factory()->create();
         $genre = Genre::factory()->create();
@@ -244,7 +244,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function ゲストユーザーは書籍詳細を取得できる(): void
+    public function 未認証ユーザーは書籍詳細を取得できる(): void
     {
         $book = Book::factory()->create();
         $genre = Genre::factory()->create();
@@ -439,7 +439,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function ゲストユーザーは書籍を編集できる(): void
+    public function 未認証ユーザーは書籍を編集できる(): void
     {
 
         $genre = Genre::factory()->create();
@@ -547,7 +547,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function ゲストユーザーは書籍を削除できる(): void
+    public function 未認証ユーザーは書籍を削除できる(): void
     {
         $book = Book::factory()->create();
         $genre = Genre::factory()->create();

@@ -11,7 +11,7 @@ class AuthenticationTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function ゲストユーザーは会員登録画面を表示できる(): void
+    public function 未認証ユーザーは会員登録画面を表示できる(): void
     {
         $response = $this->get(route('register'));
 
@@ -20,7 +20,7 @@ class AuthenticationTest extends TestCase
     }
 
     /** @test */
-    public function ゲストユーザーは会員登録ができる(): void
+    public function 未認証ユーザーは会員登録ができる(): void
     {
         $data = [
             'name' => '山田太郎',
@@ -190,7 +190,7 @@ class AuthenticationTest extends TestCase
     }
 
     /** @test */
-    public function ゲストユーザーはログイン画面を表示できる(): void
+    public function 未認証ユーザーはログイン画面を表示できる(): void
     {
         $response = $this->get(route('login'));
 
