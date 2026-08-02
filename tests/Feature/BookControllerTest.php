@@ -338,21 +338,34 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 書籍登録時にisbnが空だとバリデーションエラーになる(): void
+    public function 書籍登録時にisbnと出版日が空でも登録できる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
-        $response = $this->actingAs($user)
-            ->post(route('books.store'), [
-                'title' => 'テストタイトル',
-                'author' => '著者名',
-                'isbn' => '',
-                'published_date' => '2026-07-23',
-                'genres' => [$genre->id],
-            ]);
+        $data = [
+            'title' => 'テストタイトル',
+            'author' => '著者名',
+            'isbn' => '',
+            'published_date' => '',
+            'genres' => [$genre->id],
+        ];
 
-        $response->assertSessionHasErrors('isbn');
+        $response = $this->actingAs($user)
+            ->post(route('books.store'), $data);
+
+        $book = Book::where('title', $data['title'])->firstOrFail();
+
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', '書籍を登録しました。');
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'author' => $data['author'],
+            'isbn' => null,
+            'published_date' => null,
+        ]);
     }
 
     /** @test */
@@ -411,24 +424,6 @@ class BookControllerTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors('isbn');
-    }
-
-    /** @test */
-    public function 書籍登録時に出版日が空だとバリデーションエラーになる(): void
-    {
-        $user = User::factory()->create();
-        $genre = Genre::factory()->create();
-
-        $response = $this->actingAs($user)
-            ->post(route('books.store'), [
-                'title' => 'テストタイトル',
-                'author' => '著者名',
-                'isbn' => '1234567890123',
-                'published_date' => '',
-                'genres' => [$genre->id],
-            ]);
-
-        $response->assertSessionHasErrors('published_date');
     }
 
     /** @test */
