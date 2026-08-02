@@ -11,7 +11,13 @@ use Illuminate\View\View;
 
 class ReviewController extends Controller
 {
-    // レビュー投稿
+    /**
+     * レビューを登録する。
+     *
+     * @param  StoreReviewRequest  $request  レビュー登録用の入力値
+     * @param  Book  $book  対象の書籍
+     * @return RedirectResponse 対象書籍の詳細画面へリダイレクト
+     */
     public function store(StoreReviewRequest $request, Book $book): RedirectResponse
     {
         $validated = $request->validated();
@@ -26,7 +32,12 @@ class ReviewController extends Controller
             ->with('success', 'レビューを投稿しました。');
     }
 
-    // レビュー編集画面表示
+    /**
+     * レビュー編集画面を表示する。
+     *
+     * @param  Review  $review  対象のレビュー
+     * @return View レビュー編集画面
+     */
     public function edit(Review $review): View
     {
         $this->authorize('update', $review);
@@ -36,7 +47,13 @@ class ReviewController extends Controller
         return view('reviews.edit', compact('review'));
     }
 
-    // レビュー更新
+    /**
+     * レビューを更新する。
+     *
+     * @param  UpdateReviewRequest  $request  レビュー更新用の入力値
+     * @param  Review  $review  対象のレビュー
+     * @return RedirectResponse 対象書籍の詳細画面へリダイレクト
+     */
     public function update(UpdateReviewRequest $request, Review $review): RedirectResponse
     {
         $this->authorize('update', $review);
@@ -47,7 +64,12 @@ class ReviewController extends Controller
             ->with('success', 'レビューを更新しました。');
     }
 
-    // レビュー削除
+    /**
+     * レビューを削除する。
+     *
+     * @param  Review  $review  対象のレビュー
+     * @return RedirectResponse 対象書籍の詳細画面へリダイレクト
+     */
     public function destroy(Review $review): RedirectResponse
     {
         $this->authorize('delete', $review);
