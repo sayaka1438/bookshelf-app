@@ -41,4 +41,9 @@ class Book extends Model
     {
         return $this->belongsToMany(Genre::class);
     }
+
+    public function readingPlans(): HasMany
+    {
+        return $this->hasMany(ReadingPlan::class);
+    }
 }
