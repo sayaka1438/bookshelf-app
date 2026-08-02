@@ -8,7 +8,12 @@ use Illuminate\View\View;
 
 class FavoriteController extends Controller
 {
-    // お気に入りトグル
+    /**
+     * お気に入りを追加または解除する。
+     *
+     * @param  Book  $book  対象の書籍
+     * @return RedirectResponse 元の画面へリダイレクト
+     */
     public function toggle(Book $book): RedirectResponse
     {
         $user = auth()->user();
@@ -24,7 +29,11 @@ class FavoriteController extends Controller
         return back()->with('success', 'お気に入りに追加しました。');
     }
 
-    // お気に入り一覧
+    /**
+     * お気に入り一覧を表示する。
+     *
+     * @return View お気に入り一覧画面
+     */
     public function index(): View
     {
         $books = auth()->user()

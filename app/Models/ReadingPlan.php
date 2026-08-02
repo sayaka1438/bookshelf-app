@@ -19,6 +19,15 @@ class ReadingPlan extends Model
         'completed_at',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'status' => ReadingPlanStatus::class,
+            'target_date' => 'date',
+            'completed_at' => 'datetime',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -27,14 +36,5 @@ class ReadingPlan extends Model
     public function book(): BelongsTo
     {
         return $this->belongsTo(Book::class);
-    }
-
-    protected function casts(): array
-    {
-        return [
-            'status' => ReadingPlanStatus::class,
-            'target_date' => 'date',
-            'completed_at' => 'datetime',
-        ];
     }
 }

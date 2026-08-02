@@ -7,7 +7,12 @@ use Illuminate\Http\RedirectResponse;
 
 class ReviewLikeController extends Controller
 {
-    // レビューいいねトグル
+    /**
+     * レビューのいいねを追加または解除する。
+     *
+     * @param  Review  $review  対象のレビュー
+     * @return RedirectResponse 元の画面へリダイレクト
+     */
     public function toggle(Review $review): RedirectResponse
     {
         $user = auth()->user();

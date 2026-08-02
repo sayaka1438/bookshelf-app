@@ -7,7 +7,11 @@ use Illuminate\View\View;
 
 class RankingController extends Controller
 {
-    // ランキング一覧
+    /**
+     * ランキング一覧を表示する。
+     *
+     * @return View ランキング一覧画面
+     */
     public function index(): View
     {
         $rankedBooks = Book::has('reviews')
