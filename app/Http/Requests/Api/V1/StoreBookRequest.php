@@ -23,11 +23,10 @@ class StoreBookRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => 'required|integer|exists:users,id',
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|regex:/^\d{13}$/|unique:books,isbn',
-            'published_date' => 'required|date',
+            'isbn' => 'nullable|string|regex:/^\d{13}$/|unique:books,isbn',
+            'published_date' => 'nullable|date',
             'description' => 'nullable|string|max:1000',
             'image_url' => 'nullable|url|max:255',
             'genres' => 'required|array|min:1',
@@ -38,7 +37,6 @@ class StoreBookRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'user_id' => '登録者ID',
             'title' => 'タイトル',
             'author' => '著者名',
             'isbn' => 'ISBN',
@@ -52,7 +50,6 @@ class StoreBookRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_id.exists' => '指定された登録者IDは存在しません。',
             'isbn.regex' => 'ISBNは13桁で入力してください。',
             'isbn.unique' => 'このISBNはすでに登録されています。',
             'genres.required' => 'ジャンルを指定してください。',

@@ -15,6 +15,16 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function () {
+
+    // 認証不要
     Route::apiResource('books', BookController::class)
+        ->only(['index', 'show'])
         ->names('api.books');
+
+    // 認証必須
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::apiResource('books', BookController::class)
+            ->only(['store', 'update', 'destroy'])
+            ->names('api.books');
+    });
 });

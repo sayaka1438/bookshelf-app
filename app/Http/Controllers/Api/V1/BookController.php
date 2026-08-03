@@ -12,10 +12,16 @@ use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
-    // 書籍一覧API
+    /**
+     * 書籍一覧を取得するAPI
+     *
+     * @param  IndexBookRequest  $request  書籍一覧検索用の入力値
+     * @return AnonymousResourceCollection 書籍一覧
+     */
     public function index(IndexBookRequest $request): AnonymousResourceCollection
     {
         $validated = $request->validated();
@@ -48,7 +54,12 @@ class BookController extends Controller
         return BookResource::collection($books);
     }
 
-    // 書籍詳細API
+    /**
+     * 書籍詳細を取得するAPI
+     *
+     * @param  Book  $book  対象の書籍
+     * @return BookDetailResource 書籍詳細
+     */
     public function show(Book $book): BookDetailResource
     {
         $book->load(
@@ -59,7 +70,12 @@ class BookController extends Controller
         return new BookDetailResource($book);
     }
 
-    // 書籍登録API
+    /**
+     * 書籍を登録し、選択されたジャンルを紐付けるAPI
+     *
+     * @param  StoreBookRequest  $request  書籍登録用の入力値
+     * @return JsonResponse 登録した書籍情報
+     */
     public function store(StoreBookRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -67,9 +83,16 @@ class BookController extends Controller
         $genres = $validated['genres'];
         unset($validated['genres']);
 
-        $book = Book::create($validated);
+        $book = DB::transaction(function () use ($validated, $genres) {
+            $book = Book::create([
+                'user_id' => auth()->id(),
+                ...$validated,
+            ]);
 
-        $book->genres()->sync($genres);
+            $book->genres()->sync($genres);
+
+            return $book;
+        });
 
         $book->load('genres');
 
@@ -78,26 +101,43 @@ class BookController extends Controller
             ->setStatusCode(201);
     }
 
-    // 書籍更新API
+    /**
+     * 書籍を更新し、選択されたジャンルを紐付けるAPI
+     *
+     * @param  UpdateBookRequest  $request  書籍更新用の入力値
+     * @param  Book  $book  更新対象の書籍
+     * @return BookDetailResource 更新した書籍情報
+     */
     public function update(UpdateBookRequest $request, Book $book): BookDetailResource
     {
+        $this->authorize('update', $book);
+
         $validated = $request->validated();
 
         $genres = $validated['genres'];
         unset($validated['genres']);
 
-        $book->update($validated);
+        DB::transaction(function () use ($book, $validated, $genres) {
+            $book->update($validated);
 
-        $book->genres()->sync($genres);
+            $book->genres()->sync($genres);
+        });
 
         $book->load('genres');
 
         return new BookDetailResource($book);
     }
 
-    // 書籍削除API
+    /**
+     * 書籍を削除するAPI
+     *
+     * @param  Book  $book  削除対象の書籍
+     * @return Response 204 No Content
+     */
     public function destroy(Book $book): Response
     {
+        $this->authorize('delete', $book);
+
         $book->delete();
 
         return response()->noContent();

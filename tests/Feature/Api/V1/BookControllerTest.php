@@ -7,6 +7,7 @@ use App\Models\Genre;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class BookControllerTest extends TestCase
@@ -291,21 +292,48 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 存在しない書籍idだと404エラーになる(): void
+    public function 存在しない書籍idだと500エラーになる(): void
     {
         $response = $this->getJson(route('api.books.show', 999999));
 
-        $response->assertNotFound();
+        $response->assertStatus(500);
+        $response->assertJson([
+            'message' => '指定されたデータは存在しません。',
+        ]);
     }
 
     /** @test */
-    public function 書籍を登録できる(): void
+    public function 未認証ユーザーが書籍を登録しようとすると401エラーになる(): void
+    {
+        $genre = Genre::factory()->create();
+
+        $response = $this->postJson(route('api.books.store'), [
+            'title' => 'テストタイトル',
+            'author' => '著者名',
+            'isbn' => '1234567890123',
+            'published_date' => '2026-07-29',
+            'genres' => [$genre->id],
+        ]);
+
+        $response->assertUnauthorized();
+        $response->assertJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $this->assertDatabaseMissing('books', [
+            'title' => 'テストタイトル',
+        ]);
+    }
+
+    /** @test */
+    public function 認証済みユーザーは書籍を登録できる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $data = [
-            'user_id' => $user->id,
             'title' => 'テストタイトル',
             'author' => '著者名',
             'isbn' => '1234567890123',
@@ -315,7 +343,7 @@ class BookControllerTest extends TestCase
 
         $response = $this->postJson(route('api.books.store'), $data);
 
-        $response->assertStatus(201);
+        $response->assertCreated();
 
         $response->assertJsonFragment([
             'isbn' => $data['isbn'],
@@ -327,6 +355,7 @@ class BookControllerTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
             'isbn' => $data['isbn'],
         ]);
 
@@ -344,8 +373,9 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $response = $this->postJson(route('api.books.store'), [
-            'user_id' => $user->id,
             'title' => '',
             'author' => '著者名',
             'isbn' => '1234567890123',
@@ -363,12 +393,13 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $existingBook = Book::factory()->create([
             'isbn' => '1234567890123',
         ]);
 
         $response = $this->postJson(route('api.books.store'), [
-            'user_id' => $user->id,
             'title' => 'テストタイトル',
             'author' => '著者名',
             'isbn' => $existingBook->isbn,
@@ -386,8 +417,9 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $response = $this->postJson(route('api.books.store'), [
-            'user_id' => $user->id,
             'title' => 'テストタイトル',
             'author' => '著者名',
             'isbn' => '1234567890123',
@@ -406,8 +438,9 @@ class BookControllerTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $response = $this->postJson(route('api.books.store'), [
-            'user_id' => $user->id,
             'title' => 'テストタイトル',
             'author' => '著者名',
             'isbn' => '1234567890123',
@@ -425,8 +458,9 @@ class BookControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $response = $this->postJson(route('api.books.store'), [
-            'user_id' => $user->id,
             'title' => 'テストタイトル',
             'author' => '著者名',
             'isbn' => '1234567890123',
@@ -439,13 +473,43 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 未認証ユーザーは書籍を編集できる(): void
+    public function 未認証ユーザーが書籍を編集しようとすると401エラーになる(): void
     {
-
         $genre = Genre::factory()->create();
         $book = Book::factory()->create([
             'title' => '更新前のタイトル',
         ]);
+
+        $response = $this->putJson(route('api.books.update', $book), [
+            'title' => '更新後のタイトル',
+            'author' => $book->author,
+            'isbn' => $book->isbn,
+            'published_date' => $book->published_date,
+            'genres' => [$genre->id],
+        ]);
+
+        $response->assertUnauthorized();
+        $response->assertJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'title' => '更新前のタイトル',
+        ]);
+    }
+
+    /** @test */
+    public function 認証済みユーザーは自分の登録した書籍を編集できる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+        $book = Book::factory()->create([
+            'user_id' => $user->id,
+            'title' => '更新前のタイトル',
+        ]);
+
+        Sanctum::actingAs($user);
 
         $response = $this->putJson(route('api.books.update', $book), [
             'title' => '更新後のタイトル',
@@ -468,14 +532,52 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
+    public function 他人が登録した書籍を編集しようとすると403エラーになる(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        $genre = Genre::factory()->create();
+        $book = Book::factory()->create([
+            'user_id' => $otherUser->id,
+            'title' => '更新前のタイトル',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->putJson(route('api.books.update', $book), [
+            'title' => '更新後のタイトル',
+            'author' => $book->author,
+            'isbn' => $book->isbn,
+            'published_date' => $book->published_date,
+            'genres' => [$genre->id],
+        ]);
+
+        $response->assertForbidden();
+        $response->assertJson([
+            'message' => 'この操作を行う権限がありません。',
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'title' => '更新前のタイトル',
+        ]);
+    }
+
+    /** @test */
     public function 書籍更新時にジャンルの紐付けも更新される(): void
     {
-        $book = Book::factory()->create();
+        $user = User::factory()->create();
+        $book = Book::factory()->create([
+            'user_id' => $user->id,
+        ]);
 
         $oldGenre = Genre::factory()->create();
         $newGenre = Genre::factory()->create();
 
         $book->genres()->attach($oldGenre->id);
+
+        Sanctum::actingAs($user);
 
         $response = $this->putJson(route('api.books.update', $book), [
             'title' => $book->title,
@@ -501,10 +603,14 @@ class BookControllerTest extends TestCase
     /** @test */
     public function 書籍更新時に自分自身のisbnだと重複エラーにならない(): void
     {
+        $user = User::factory()->create();
         $genre = Genre::factory()->create();
         $book = Book::factory()->create([
+            'user_id' => $user->id,
             'title' => '更新前のタイトル',
         ]);
+
+        Sanctum::actingAs($user);
 
         $response = $this->putJson(route('api.books.update', $book), [
             'title' => '更新後のタイトル',
@@ -515,19 +621,28 @@ class BookControllerTest extends TestCase
         ]);
 
         $response->assertOk();
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'title' => '更新後のタイトル',
+        ]);
     }
 
     /** @test */
     public function 書籍更新時に他の書籍と同じisbnだとバリデーションエラーになる(): void
     {
+        $user = User::factory()->create();
         $genre = Genre::factory()->create();
         $book = Book::factory()->create([
+            'user_id' => $user->id,
             'isbn' => '1111111111111',
         ]);
 
         $existingBook = Book::factory()->create([
             'isbn' => '2222222222222',
         ]);
+
+        Sanctum::actingAs($user);
 
         $response = $this->putJson(route('api.books.update', $book), [
             'title' => $book->title,
@@ -547,10 +662,32 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 未認証ユーザーは書籍を削除できる(): void
+    public function 未認証ユーザーが書籍を削除しようとすると401エラーになる(): void
     {
         $book = Book::factory()->create();
+
+        $response = $this->deleteJson(route('api.books.destroy', $book));
+
+        $response->assertUnauthorized();
+        $response->assertJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+        ]);
+    }
+
+    /** @test */
+    public function 認証済みユーザーは自分の登録した書籍を削除できる(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create([
+            'user_id' => $user->id,
+        ]);
         $genre = Genre::factory()->create();
+
+        Sanctum::actingAs($user);
 
         $book->genres()->attach($genre->id);
 
@@ -573,6 +710,30 @@ class BookControllerTest extends TestCase
 
         $this->assertDatabaseMissing('reviews', [
             'id' => $review->id,
+        ]);
+    }
+
+    /** @test */
+    public function 他人が登録した書籍を削除しようとすると403エラーになる(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        $book = Book::factory()->create([
+            'user_id' => $otherUser->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->deleteJson(route('api.books.destroy', $book));
+
+        $response->assertForbidden();
+        $response->assertJson([
+            'message' => 'この操作を行う権限がありません。',
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
         ]);
     }
 }
