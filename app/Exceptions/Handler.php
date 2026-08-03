@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,13 +34,24 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e): Response
     {
-        if (
-            $request->is('api/*')
-            && $e instanceof ModelNotFoundException
-        ) {
-            return response()->json([
-                'message' => '指定されたデータは存在しません。',
-            ], 404);
+        if ($request->is('api/*')) {
+            if ($e instanceof AuthenticationException) {
+                return response()->json([
+                    'message' => '認証が必要です。',
+                ], 401);
+            }
+
+            if ($e instanceof AuthorizationException) {
+                return response()->json([
+                    'message' => 'この操作を行う権限がありません。',
+                ], 403);
+            }
+
+            if ($e instanceof ModelNotFoundException) {
+                return response()->json([
+                    'message' => '指定されたデータは存在しません。',
+                ], 500);
+            }
         }
 
         return parent::render($request, $e);
