@@ -43,7 +43,7 @@ class BookController extends Controller
 
         if ($genreId) {
             $query->whereHas('genres', function ($query) use ($genreId) {
-                $query->where('genre_id', $genreId);
+                $query->whereKey($genreId);
             });
         }
 
