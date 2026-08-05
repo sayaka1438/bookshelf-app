@@ -22,12 +22,9 @@ class Book extends Model
         'image_url',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'published_date' => 'date',
-        ];
-    }
+    protected $casts = [
+        'published_date' => 'date',
+    ];
 
     public function user(): BelongsTo
     {
