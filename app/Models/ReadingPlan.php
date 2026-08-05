@@ -19,14 +19,11 @@ class ReadingPlan extends Model
         'completed_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'status' => ReadingPlanStatus::class,
-            'target_date' => 'date',
-            'completed_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'status' => ReadingPlanStatus::class,
+        'target_date' => 'date',
+        'completed_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {
