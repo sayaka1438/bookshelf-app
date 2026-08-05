@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\GoogleBooksController;
 use App\Http\Controllers\RankingController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewLikeController;
@@ -30,6 +31,9 @@ Route::middleware('auth')->group(function () {
         ->name('reviews.like');
 
     Route::resource('genres', GenreController::class);
+
+    Route::get('/books/isbn/{isbn}', [GoogleBooksController::class, 'searchByIsbn'])
+        ->name('books.isbn.search');
 });
 
 Route::resource('books', BookController::class)
