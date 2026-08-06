@@ -19,9 +19,8 @@ return new class extends Migration
             $table->string('status');
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
-
-            // コーチ確認後に追加予定
-            // $table->unique(['user_id', 'book_id']);
+            // 同一ユーザーによる同一書籍への重複読書計画を防止
+            $table->unique(['user_id', 'book_id']);
         });
     }
 
