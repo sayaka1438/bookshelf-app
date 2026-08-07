@@ -40,6 +40,7 @@ class BookController extends Controller
         }
 
         $genreId = $validated['genre_id'] ?? null;
+
         if ($genreId) {
             $query->whereHas('genres', function ($query) use ($genreId) {
                 $query->whereKey($genreId);
