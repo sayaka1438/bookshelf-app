@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ReadingPlanStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,16 @@ class ReadingPlan extends Model
         'target_date' => 'date',
         'completed_at' => 'datetime',
     ];
+
+    public function scopeFilterByStatus(
+        Builder $query,
+        ?string $status
+    ): Builder {
+        return $query->when(
+            $status,
+            fn (Builder $query) => $query->where('status', $status)
+        );
+    }
 
     public function user(): BelongsTo
     {

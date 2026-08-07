@@ -12,8 +12,8 @@ enum ReadingPlanStatus: string
     {
         return match ($this) {
             self::InProgress => '進行中',
-            self::Completed => '読了',
-            self::Overdue => '期限超過',
+            self::Completed => '完了',
+            self::Overdue => '期限切れ',
         };
     }
 
