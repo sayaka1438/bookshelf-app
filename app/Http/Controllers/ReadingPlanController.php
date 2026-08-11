@@ -26,6 +26,7 @@ class ReadingPlanController extends Controller
             ->readingPlans()
             ->with('book')
             ->filterByStatus($currentStatus)
+            ->orderByDesc('target_date')
             ->get();
 
         return view('reading-plans.index', compact(

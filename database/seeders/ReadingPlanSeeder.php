@@ -43,7 +43,7 @@ class ReadingPlanSeeder extends Seeder
                 'user_id' => $users['yamada@example.com'],
                 'book_id' => $books['9784863940246'],
                 'target_date' => $today->copy()->subDays(8),
-                'status' => ReadingPlanStatus::Overdue,
+                'status' => ReadingPlanStatus::Expired,
                 'completed_at' => null,
             ],
             // 別ユーザー：認可確認用
@@ -83,7 +83,7 @@ class ReadingPlanSeeder extends Seeder
                 'user_id' => $users['yamada@example.com'],
                 'book_id' => $books['9784822251468'],
                 'target_date' => $today->copy()->subDays(3),
-                'status' => ReadingPlanStatus::Overdue,
+                'status' => ReadingPlanStatus::Expired,
                 'completed_at' => null,
             ],
         ];
