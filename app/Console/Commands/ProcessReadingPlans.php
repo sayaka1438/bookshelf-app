@@ -30,7 +30,7 @@ class ProcessReadingPlans extends Command
      */
     public function handle(): void
     {
-        $this->updateOverdueReadingPlans();
+        $this->updateExpiredReadingPlans();
 
         $this->sendReminderNotifications(
             today()->addDays(3),
@@ -48,12 +48,12 @@ class ProcessReadingPlans extends Command
         );
     }
 
-    private function updateOverdueReadingPlans(): void
+    private function updateExpiredReadingPlans(): void
     {
         ReadingPlan::where('status', ReadingPlanStatus::InProgress)
             ->whereDate('target_date', '<', today())
             ->update([
-                'status' => ReadingPlanStatus::Overdue,
+                'status' => ReadingPlanStatus::Expired,
             ]);
     }
 
@@ -62,7 +62,7 @@ class ProcessReadingPlans extends Command
         string $timing
     ): void {
         $status = $timing === 'three_days_after'
-            ? ReadingPlanStatus::Overdue
+            ? ReadingPlanStatus::Expired
             : ReadingPlanStatus::InProgress;
 
         $plans = ReadingPlan::with(['book', 'user'])
