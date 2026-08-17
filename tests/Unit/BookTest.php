@@ -8,6 +8,7 @@ use App\Models\Genre;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class BookTest extends TestCase
@@ -82,6 +83,24 @@ class BookTest extends TestCase
         $this->assertCount(1, $book->favorites);
         $this->assertTrue(
             $book->favorites->contains($favorite)
+        );
+    }
+
+    /** @test */
+    public function 出版日が日付としてキャストされる(): void
+    {
+        $book = Book::factory()->create([
+            'published_date' => '2026-08-17',
+        ]);
+
+        $this->assertInstanceOf(
+            Carbon::class,
+            $book->published_date
+        );
+
+        $this->assertSame(
+            '2026-08-17',
+            $book->published_date->toDateString()
         );
     }
 }
