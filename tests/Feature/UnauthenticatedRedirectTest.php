@@ -4,7 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Book;
 use App\Models\Genre;
+use App\Models\ReadingPlan;
 use App\Models\Review;
+use App\Models\User;
+use App\Notifications\ReadingPlanReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,7 +50,7 @@ class UnauthenticatedRedirectTest extends TestCase
     }
 
     /** @test */
-    public function 未認証ユーザーが書籍を編集しようとするとログイン画面へリダイレクトされる(): void
+    public function 未認証ユーザーが書籍を更新しようとするとログイン画面へリダイレクトされる(): void
     {
         $book = Book::factory()->create();
         $genre = Genre::factory()->create();
@@ -96,7 +99,7 @@ class UnauthenticatedRedirectTest extends TestCase
     }
 
     /** @test */
-    public function 未認証ユーザーがレビューを編集しようとするとログイン画面へリダイレクトされる(): void
+    public function 未認証ユーザーがレビューを更新しようとするとログイン画面へリダイレクトされる(): void
     {
         $review = Review::factory()->create();
 
@@ -164,7 +167,7 @@ class UnauthenticatedRedirectTest extends TestCase
     }
 
     /** @test */
-    public function 未認証ユーザーがジャンルを編集しようとするとログイン画面へリダイレクトされる(): void
+    public function 未認証ユーザーがジャンルを更新しようとするとログイン画面へリダイレクトされる(): void
     {
         $genre = Genre::factory()->create();
 
@@ -209,6 +212,113 @@ class UnauthenticatedRedirectTest extends TestCase
         $review = Review::factory()->create();
 
         $response = $this->post(route('reviews.like', $review));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーがマイ読書レポートにアクセスするとログイン画面へリダイレクトされる(): void
+    {
+        $response = $this->get(route('reports.index'));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが読書計画一覧画面へアクセスするとログイン画面へリダイレクトされる(): void
+    {
+        $response = $this->get(route('reading-plans.index'));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが読書計画作成画面へアクセスするとログイン画面へリダイレクトされる(): void
+    {
+        $response = $this->get(route('reading-plans.create'));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが読書計画を作成しようとするとログイン画面へリダイレクトされる(): void
+    {
+        $book = Book::factory()->create();
+
+        $response = $this->post(route('reading-plans.store'), [
+            'book_id' => $book->id,
+            'target_date' => today()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが読書計画編集画面へアクセスするとログイン画面へリダイレクトされる(): void
+    {
+        $readingPlan = ReadingPlan::factory()->create();
+
+        $response = $this->get(route('reading-plans.edit', $readingPlan));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが読書計画を更新しようとするとログイン画面へリダイレクトされる(): void
+    {
+        $readingPlan = ReadingPlan::factory()->create();
+
+        $response = $this->put(route('reading-plans.update', $readingPlan), [
+            'target_date' => today()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが読書計画を削除しようとするとログイン画面へリダイレクトされる(): void
+    {
+        $readingPlan = ReadingPlan::factory()->create();
+
+        $response = $this->delete(route('reading-plans.destroy', $readingPlan));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが読書計画を完了しようとするとログイン画面へリダイレクトされる(): void
+    {
+        $readingPlan = ReadingPlan::factory()->create();
+
+        $response = $this->post(route('reading-plans.complete', $readingPlan));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが通知一覧画面へアクセスするとログイン画面へリダイレクトされる(): void
+    {
+        $response = $this->get(route('notifications.index'));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function 未認証ユーザーが通知を既読にしようとするとログイン画面へリダイレクトされる(): void
+    {
+        $user = User::factory()->create();
+
+        $readingPlan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        $user->notify(
+            new ReadingPlanReminderNotification($readingPlan, 'on_due_date')
+        );
+
+        $notification = $user->notifications()->first();
+
+        $response = $this->post(route('notifications.read', $notification));
 
         $response->assertRedirect(route('login'));
     }

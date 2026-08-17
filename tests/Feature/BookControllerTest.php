@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Book;
 use App\Models\Genre;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -53,6 +54,229 @@ class BookControllerTest extends TestCase
                     && $books->total() === 15;
             }
         );
+    }
+
+    /** @test */
+    public function キーワードで書籍を検索できる(): void
+    {
+        $titleMatchedBook = Book::factory()->create([
+            'title' => 'Laravel入門',
+            'author' => '山田太郎',
+        ]);
+
+        $authorMatchedBook = Book::factory()->create([
+            'title' => 'PHP実践',
+            'author' => 'Laravel太郎',
+        ]);
+
+        $unmatchedBook = Book::factory()->create([
+            'title' => 'SQL入門',
+            'author' => '佐藤花子',
+        ]);
+
+        $response = $this->get(route('books.index', [
+            'keyword' => 'Laravel',
+        ]));
+
+        $response->assertOk();
+
+        $response->assertSee($titleMatchedBook->title);
+        $response->assertSee($authorMatchedBook->title);
+
+        $response->assertDontSee($unmatchedBook->title);
+    }
+
+    /** @test */
+    public function キーワードが256文字以上だとバリデーションエラーになる(): void
+    {
+        $response = $this->get(route('books.index', [
+            'keyword' => str_repeat('あ', 256),
+        ]));
+
+        $response->assertSessionHasErrors('keyword');
+    }
+
+    /** @test */
+    public function ジャンルで書籍を絞り込みできる(): void
+    {
+        $targetGenre = Genre::factory()->create();
+        $otherGenre = Genre::factory()->create();
+
+        $matchedBook1 = Book::factory()->create();
+        $matchedBook2 = Book::factory()->create();
+        $unmatchedBook = Book::factory()->create();
+
+        $matchedBook1->genres()->attach($targetGenre->id);
+        $matchedBook2->genres()->attach($targetGenre->id);
+        $unmatchedBook->genres()->attach($otherGenre->id);
+
+        $response = $this->get(route('books.index', [
+            'genre' => $targetGenre->id,
+        ]));
+
+        $response->assertOk();
+
+        $response->assertSee($matchedBook1->title);
+        $response->assertSee($matchedBook2->title);
+
+        $response->assertDontSee($unmatchedBook->title);
+    }
+
+    /** @test */
+    public function 存在しないジャンルだとバリデーションエラーになる(): void
+    {
+        $response = $this->get(route('books.index', [
+            'genre' => 999999,
+        ]));
+
+        $response->assertSessionHasErrors('genre');
+    }
+
+    /** @test */
+    public function newestで書籍を並び替えできる(): void
+    {
+        $oldBook = Book::factory()->create([
+            'created_at' => now()->subDays(2),
+        ]);
+
+        $middleBook = Book::factory()->create([
+            'created_at' => now()->subDay(),
+        ]);
+
+        $newBook = Book::factory()->create([
+            'created_at' => now(),
+        ]);
+
+        $response = $this->get(route('books.index', [
+            'sort' => 'newest',
+        ]));
+
+        $response->assertOk();
+
+        $response->assertSeeInOrder([
+            $newBook->title,
+            $middleBook->title,
+            $oldBook->title,
+        ]);
+    }
+
+    /** @test */
+    public function oldestで書籍を並び替えできる(): void
+    {
+        $oldBook = Book::factory()->create([
+            'created_at' => now()->subDays(2),
+        ]);
+
+        $middleBook = Book::factory()->create([
+            'created_at' => now()->subDay(),
+        ]);
+
+        $newBook = Book::factory()->create([
+            'created_at' => now(),
+        ]);
+
+        $response = $this->get(route('books.index', [
+            'sort' => 'oldest',
+        ]));
+
+        $response->assertOk();
+
+        $response->assertSeeInOrder([
+            $oldBook->title,
+            $middleBook->title,
+            $newBook->title,
+        ]);
+    }
+
+    /** @test */
+    public function titleで書籍を並び替えできる(): void
+    {
+        $firstBook = Book::factory()->create([
+            'title' => 'あいうえお',
+        ]);
+
+        $secondBook = Book::factory()->create([
+            'title' => 'かきくけこ',
+        ]);
+
+        $thirdBook = Book::factory()->create([
+            'title' => 'さしすせそ',
+        ]);
+
+        $response = $this->get(route('books.index', [
+            'sort' => 'title',
+        ]));
+
+        $response->assertOk();
+
+        $response->assertSeeInOrder([
+            $firstBook->title,
+            $secondBook->title,
+            $thirdBook->title,
+        ]);
+    }
+
+    /** @test */
+    public function ratingで書籍を並び替えできる(): void
+    {
+        $highRatedBook = Book::factory()->create();
+        $middleRatedBook = Book::factory()->create();
+        $lowRatedBook = Book::factory()->create();
+
+        Review::factory()->create([
+            'book_id' => $highRatedBook->id,
+            'rating' => 5,
+        ]);
+
+        Review::factory()->create([
+            'book_id' => $middleRatedBook->id,
+            'rating' => 3,
+        ]);
+
+        Review::factory()->create([
+            'book_id' => $lowRatedBook->id,
+            'rating' => 1,
+        ]);
+
+        $response = $this->get(route('books.index', [
+            'sort' => 'rating',
+        ]));
+
+        $response->assertOk();
+
+        $response->assertSeeInOrder([
+            $highRatedBook->title,
+            $middleRatedBook->title,
+            $lowRatedBook->title,
+        ]);
+    }
+
+    /** @test */
+    public function 検索条件を維持したままページネーションできる(): void
+    {
+        Book::factory()->count(15)->create([
+            'title' => 'Laravel',
+        ]);
+
+        Book::factory()->count(5)->create([
+            'title' => 'PHP',
+        ]);
+
+        $response = $this->get(route('books.index', [
+            'keyword' => 'Laravel',
+        ]));
+
+        $response->assertOk();
+
+        $response->assertViewHas(
+            'books',
+            function ($books) {
+                return $books->count() === 10
+                    && $books->total() === 15;
+            }
+        );
+
+        $response->assertSee('keyword=Laravel&amp;page=2', false);
     }
 
     /** @test */
