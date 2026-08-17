@@ -209,6 +209,30 @@ class ReadingPlanControllerTest extends TestCase
     }
 
     /** @test */
+    public function 同一ユーザーが同じ書籍に2件目の読書計画を登録しようとするとバリデーションエラーになる(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('reading-plans.store'), [
+                'book_id' => $book->id,
+                'target_date' => today()->toDateString(),
+            ]);
+
+        $response->assertSessionHasErrors([
+            'book_id' => 'この書籍にはすでに読書計画があります。',
+        ]);
+
+        $this->assertDatabaseCount('reading_plans', 1);
+    }
+
+    /** @test */
     public function 読書計画登録時に書籍が未選択だとバリデーションエラーになる(): void
     {
         $user = User::factory()->create();
