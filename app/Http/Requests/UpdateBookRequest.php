@@ -61,7 +61,7 @@ class UpdateBookRequest extends FormRequest
             'genres.required' => 'ジャンルを選択してください。',
             'genres.min' => 'ジャンルを選択してください。',
             'genres.*.integer' => '選択されたジャンルが正しくありません。',
-            'genres.*.exists' => '選択されたジャンルが存在しません。',
+            'genres.*.exists' => '選択されたジャンルは存在しません。',
         ];
     }
 }
