@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Book;
+use App\Models\Favorite;
 use App\Models\Genre;
 use App\Models\Review;
 use App\Models\User;
@@ -565,6 +566,28 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
+    public function 存在しない書籍idで更新しようとすると500エラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->putJson(route('api.books.update', 999999), [
+            'title' => '更新後のタイトル',
+            'author' => '著者名',
+            'isbn' => '1234567890123',
+            'published_date' => '2026-08-19',
+            'genres' => [$genre->id],
+        ]);
+
+        $response->assertStatus(500);
+        $response->assertJson([
+            'message' => '指定されたデータは存在しません。',
+        ]);
+    }
+
+    /** @test */
     public function 書籍更新時にジャンルの紐付けも更新される(): void
     {
         $user = User::factory()->create();
@@ -695,6 +718,10 @@ class BookControllerTest extends TestCase
             'book_id' => $book->id,
         ]);
 
+        $favorite = Favorite::factory()->create([
+            'book_id' => $book->id,
+        ]);
+
         $response = $this->deleteJson(route('api.books.destroy', $book));
 
         $response->assertNoContent();
@@ -710,6 +737,10 @@ class BookControllerTest extends TestCase
 
         $this->assertDatabaseMissing('reviews', [
             'id' => $review->id,
+        ]);
+
+        $this->assertDatabaseMissing('favorites', [
+            'id' => $favorite->id,
         ]);
     }
 
@@ -734,6 +765,21 @@ class BookControllerTest extends TestCase
 
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
+        ]);
+    }
+
+    /** @test */
+    public function 存在しない書籍idで削除しようとすると500エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->deleteJson(route('api.books.destroy', 999999));
+
+        $response->assertStatus(500);
+        $response->assertJson([
+            'message' => '指定されたデータは存在しません。',
         ]);
     }
 }

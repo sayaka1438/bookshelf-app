@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Book;
 use App\Models\Review;
 use App\Models\ReviewLike;
 use App\Models\User;
@@ -17,17 +16,14 @@ class ReviewLikeControllerTest extends TestCase
     public function 認証済みユーザーはレビューにいいねを追加できる(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create();
 
-        $review = Review::factory()->create([
-            'book_id' => $book->id,
-        ]);
+        $review = Review::factory()->create();
 
         $response = $this->actingAs($user)
-            ->from(route('books.show', $book))
+            ->from(route('books.show', $review->book))
             ->post(route('reviews.like', $review));
 
-        $response->assertRedirect(route('books.show', $book));
+        $response->assertRedirect(route('books.show', $review->book));
         $response->assertSessionHas('success', 'いいねしました。');
 
         $this->assertDatabaseHas('review_likes', [
@@ -40,11 +36,8 @@ class ReviewLikeControllerTest extends TestCase
     public function 認証済みユーザーはレビューのいいねを解除できる(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create();
 
-        $review = Review::factory()->create([
-            'book_id' => $book->id,
-        ]);
+        $review = Review::factory()->create();
 
         ReviewLike::factory()->create([
             'user_id' => $user->id,
@@ -52,10 +45,10 @@ class ReviewLikeControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->from(route('books.show', $book))
+            ->from(route('books.show', $review->book))
             ->post(route('reviews.like', $review));
 
-        $response->assertRedirect(route('books.show', $book));
+        $response->assertRedirect(route('books.show', $review->book));
         $response->assertSessionHas('success', 'いいねを解除しました。');
 
         $this->assertDatabaseMissing('review_likes', [

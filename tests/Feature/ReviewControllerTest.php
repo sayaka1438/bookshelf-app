@@ -240,11 +240,9 @@ class ReviewControllerTest extends TestCase
     public function 認証済みユーザーは自分のレビューの編集画面を表示できる(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create();
 
         $review = Review::factory()->create([
             'user_id' => $user->id,
-            'book_id' => $book->id,
         ]);
 
         $response = $this->actingAs($user)
@@ -262,11 +260,8 @@ class ReviewControllerTest extends TestCase
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
 
-        $book = Book::factory()->create();
-
         $review = Review::factory()->create([
             'user_id' => $otherUser->id,
-            'book_id' => $book->id,
         ]);
 
         $response = $this->actingAs($user)
@@ -287,14 +282,12 @@ class ReviewControllerTest extends TestCase
     }
 
     /** @test */
-    public function 認証済みユーザーは自分の投稿したレビューを編集できる(): void
+    public function 認証済みユーザーは自分の投稿したレビューを更新できる(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create();
 
         $review = Review::factory()->create([
             'user_id' => $user->id,
-            'book_id' => $book->id,
             'rating' => 1,
             'comment' => '更新前のコメント',
         ]);
@@ -305,7 +298,7 @@ class ReviewControllerTest extends TestCase
                 'comment' => '更新後のコメント',
             ]);
 
-        $response->assertRedirect(route('books.show', $book));
+        $response->assertRedirect(route('books.show', $review->book));
         $response->assertSessionHas('success', 'レビューを更新しました。');
 
         $this->assertDatabaseHas('reviews', [
@@ -316,16 +309,13 @@ class ReviewControllerTest extends TestCase
     }
 
     /** @test */
-    public function 他人が投稿したレビューを編集しようとすると403エラーになる(): void
+    public function 他人が投稿したレビューを更新しようとすると403エラーになる(): void
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
 
-        $book = Book::factory()->create();
-
         $review = Review::factory()->create([
             'user_id' => $otherUser->id,
-            'book_id' => $book->id,
             'comment' => '更新前のコメント',
         ]);
 
@@ -344,14 +334,25 @@ class ReviewControllerTest extends TestCase
     }
 
     /** @test */
+    public function 存在しないレビューidで更新しようとすると404エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->put(route('reviews.update', 999999), [
+                'rating' => '5',
+            ]);
+
+        $response->assertNotFound();
+    }
+
+    /** @test */
     public function レビュー更新時に評価が空だとバリデーションエラーになる(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create();
 
         $review = Review::factory()->create([
             'user_id' => $user->id,
-            'book_id' => $book->id,
             'rating' => 3,
             'comment' => '更新前のコメント',
         ]);
@@ -375,11 +376,9 @@ class ReviewControllerTest extends TestCase
     public function レビュー更新時に評価が不正な値だとバリデーションエラーになる(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create();
 
         $review = Review::factory()->create([
             'user_id' => $user->id,
-            'book_id' => $book->id,
             'rating' => 3,
             'comment' => '更新前のコメント',
         ]);
@@ -403,17 +402,15 @@ class ReviewControllerTest extends TestCase
     public function 認証済みユーザーは自分の投稿したレビューを削除できる(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create();
 
         $review = Review::factory()->create([
             'user_id' => $user->id,
-            'book_id' => $book->id,
         ]);
 
         $response = $this->actingAs($user)
             ->delete(route('reviews.destroy', $review));
 
-        $response->assertRedirect(route('books.show', $book));
+        $response->assertRedirect(route('books.show', $review->book));
         $response->assertSessionHas('success', 'レビューを削除しました。');
 
         $this->assertDatabaseMissing('reviews', [
@@ -427,11 +424,8 @@ class ReviewControllerTest extends TestCase
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
 
-        $book = Book::factory()->create();
-
         $review = Review::factory()->create([
             'user_id' => $otherUser->id,
-            'book_id' => $book->id,
         ]);
 
         $response = $this->actingAs($user)
@@ -442,5 +436,16 @@ class ReviewControllerTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
         ]);
+    }
+
+    /** @test */
+    public function 存在しないレビューidで削除しようとすると404エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->delete(route('reviews.destroy', 999999));
+
+        $response->assertNotFound();
     }
 }

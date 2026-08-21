@@ -53,6 +53,39 @@ class GoogleBooksControllerTest extends TestCase
     }
 
     /** @test */
+    public function 書籍情報の一部が存在しない場合はnullを返す(): void
+    {
+        $user = User::factory()->create();
+
+        Http::fake([
+            'https://www.googleapis.com/books/v1/volumes*' => Http::response([
+                'items' => [
+                    [
+                        'volumeInfo' => [
+                            'title' => 'リーダブルコード',
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('books.isbn.search', [
+                'isbn' => '9784101010014',
+            ]));
+
+        $response->assertOk();
+
+        $response->assertJson([
+            'title' => 'リーダブルコード',
+            'author' => null,
+            'published_date' => null,
+            'description' => null,
+            'image_url' => null,
+        ]);
+    }
+
+    /** @test */
     public function 出版日が年月日形式でない場合はnullを返す(): void
     {
         $user = User::factory()->create();
