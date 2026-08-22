@@ -64,6 +64,7 @@ class StoreReadingPlanRequest extends FormRequest
     {
         return [
             'book_id.required' => '書籍を選択してください。',
+            'book_id.integer' => '書籍を選択してください。',
             'book_id.exists' => '選択された書籍は存在しません。',
             'target_date.after_or_equal' => '期日は今日以降の日付を指定してください。',
         ];

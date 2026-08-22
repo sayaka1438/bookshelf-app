@@ -157,16 +157,16 @@ class ReadingPlanControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
+        $thirdBook = Book::factory()->create([
+            'title' => 'さしすせそ',
+        ]);
+
         $firstBook = Book::factory()->create([
             'title' => 'あいうえお',
         ]);
 
         $secondBook = Book::factory()->create([
             'title' => 'かきくけこ',
-        ]);
-
-        $thirdBook = Book::factory()->create([
-            'title' => 'さしすせそ',
         ]);
 
         $response = $this->actingAs($user)

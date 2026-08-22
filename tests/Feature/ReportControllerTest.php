@@ -175,6 +175,41 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
+    public function 高評価書籍で評価が同じ場合は新しいレビュー順で表示される(): void
+    {
+        $user = User::factory()->create();
+
+        $oldBook = Book::factory()->create();
+        $newBook = Book::factory()->create();
+
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $oldBook->id,
+            'rating' => 5,
+            'created_at' => now()->subDay(),
+        ]);
+
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $newBook->id,
+            'rating' => 5,
+            'created_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('reports.index'));
+
+        $response->assertOk();
+
+        $response->assertViewHas('stats', function ($stats) use ($newBook, $oldBook) {
+            return $stats['top_rated_books']->pluck('id')->all() === [
+                $newBook->id,
+                $oldBook->id,
+            ];
+        });
+    }
+
+    /** @test */
     public function ジャンル別評価傾向を平均評価順で上位5件取得できる(): void
     {
         $user = User::factory()->create();
@@ -209,6 +244,100 @@ class ReportControllerTest extends TestCase
                     4,
                     3,
                 ];
+        });
+    }
+
+    /** @test */
+    public function ジャンル別評価傾向で平均評価が同じ場合はレビュー件数順で表示される(): void
+    {
+        $user = User::factory()->create();
+
+        $lessReviewedGenre = Genre::factory()->create();
+        $moreReviewedGenre = Genre::factory()->create();
+
+        $lessReviewedBook = Book::factory()->create();
+
+        $moreReviewedBook1 = Book::factory()->create();
+        $moreReviewedBook2 = Book::factory()->create();
+
+        $lessReviewedBook->genres()->attach($lessReviewedGenre->id);
+
+        $moreReviewedBook1->genres()->attach($moreReviewedGenre->id);
+        $moreReviewedBook2->genres()->attach($moreReviewedGenre->id);
+
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $lessReviewedBook->id,
+            'rating' => 5,
+        ]);
+
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $moreReviewedBook1->id,
+            'rating' => 5,
+        ]);
+
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $moreReviewedBook2->id,
+            'rating' => 5,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('reports.index'));
+
+        $response->assertOk();
+
+        $response->assertViewHas('stats', function ($stats) use ($moreReviewedGenre, $lessReviewedGenre) {
+            return $stats['genre_ratings']->pluck('id')->all() === [
+                $moreReviewedGenre->id,
+                $lessReviewedGenre->id,
+            ];
+        });
+    }
+
+    /** @test */
+    public function ジャンル別評価傾向で平均評価とレビュー件数が同じ場合は名前順で表示される(): void
+    {
+        $user = User::factory()->create();
+
+        $secondGenre = Genre::factory()->create([
+            'name' => 'かきくけこ',
+        ]);
+        $firstGenre = Genre::factory()->create([
+            'name' => 'あいうえお',
+        ]);
+
+        $secondBook = Book::factory()->create();
+
+        $firstBook = Book::factory()->create();
+
+        $secondBook->genres()->attach($secondGenre->id);
+
+        $firstBook->genres()->attach($firstGenre->id);
+
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $secondBook->id,
+            'rating' => 5,
+        ]);
+
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $firstBook->id,
+            'rating' => 5,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('reports.index'));
+
+        $response->assertOk();
+
+        $response->assertViewHas('stats', function ($stats) use ($firstGenre, $secondGenre) {
+            return $stats['genre_ratings']->pluck('id')->all() === [
+                $firstGenre->id,
+                $secondGenre->id,
+            ];
         });
     }
 }

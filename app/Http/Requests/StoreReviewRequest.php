@@ -34,6 +34,10 @@ class StoreReviewRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
+                if ($validator->errors()->has('rating')) {
+                    return;
+                }
+
                 $book = $this->route('book');
 
                 $alreadyReviewed = Review::where('user_id', auth()->id())

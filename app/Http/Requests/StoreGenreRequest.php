@@ -37,7 +37,7 @@ class StoreGenreRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.unique' => 'そのジャンル名はすでに登録されています。',
+            'name.unique' => 'このジャンル名はすでに登録されています。',
         ];
     }
 }

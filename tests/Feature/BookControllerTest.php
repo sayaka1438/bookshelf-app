@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Book;
+use App\Models\Favorite;
 use App\Models\Genre;
 use App\Models\Review;
 use App\Models\User;
@@ -133,23 +134,21 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function newestで書籍を並び替えできる(): void
+    public function デフォルトでは新しい順に書籍一覧を表示できる(): void
     {
         $oldBook = Book::factory()->create([
             'created_at' => now()->subDays(2),
-        ]);
-
-        $middleBook = Book::factory()->create([
-            'created_at' => now()->subDay(),
         ]);
 
         $newBook = Book::factory()->create([
             'created_at' => now(),
         ]);
 
-        $response = $this->get(route('books.index', [
-            'sort' => 'newest',
-        ]));
+        $middleBook = Book::factory()->create([
+            'created_at' => now()->subDay(),
+        ]);
+
+        $response = $this->get(route('books.index'));
 
         $response->assertOk();
 
@@ -167,12 +166,12 @@ class BookControllerTest extends TestCase
             'created_at' => now()->subDays(2),
         ]);
 
-        $middleBook = Book::factory()->create([
-            'created_at' => now()->subDay(),
-        ]);
-
         $newBook = Book::factory()->create([
             'created_at' => now(),
+        ]);
+
+        $middleBook = Book::factory()->create([
+            'created_at' => now()->subDay(),
         ]);
 
         $response = $this->get(route('books.index', [
@@ -191,16 +190,16 @@ class BookControllerTest extends TestCase
     /** @test */
     public function titleで書籍を並び替えできる(): void
     {
+        $thirdBook = Book::factory()->create([
+            'title' => 'さしすせそ',
+        ]);
+
         $firstBook = Book::factory()->create([
             'title' => 'あいうえお',
         ]);
 
         $secondBook = Book::factory()->create([
             'title' => 'かきくけこ',
-        ]);
-
-        $thirdBook = Book::factory()->create([
-            'title' => 'さしすせそ',
         ]);
 
         $response = $this->get(route('books.index', [
@@ -219,9 +218,14 @@ class BookControllerTest extends TestCase
     /** @test */
     public function ratingで書籍を並び替えできる(): void
     {
+        $lowRatedBook = Book::factory()->create();
         $highRatedBook = Book::factory()->create();
         $middleRatedBook = Book::factory()->create();
-        $lowRatedBook = Book::factory()->create();
+
+        Review::factory()->create([
+            'book_id' => $lowRatedBook->id,
+            'rating' => 1,
+        ]);
 
         Review::factory()->create([
             'book_id' => $highRatedBook->id,
@@ -231,11 +235,6 @@ class BookControllerTest extends TestCase
         Review::factory()->create([
             'book_id' => $middleRatedBook->id,
             'rating' => 3,
-        ]);
-
-        Review::factory()->create([
-            'book_id' => $lowRatedBook->id,
-            'rating' => 1,
         ]);
 
         $response = $this->get(route('books.index', [
@@ -249,6 +248,46 @@ class BookControllerTest extends TestCase
             $middleRatedBook->title,
             $lowRatedBook->title,
         ]);
+    }
+
+    /** @test */
+    public function キーワードとジャンルを組み合わせて書籍を検索できる(
+    ): void {
+        $targetGenre = Genre::factory()->create();
+        $otherGenre = Genre::factory()->create();
+
+        $matchedBook = Book::factory()->create([
+            'title' => 'Laravel入門',
+            'author' => '山田太郎',
+        ]);
+
+        $keywordOnlyBook = Book::factory()->create([
+            'title' => 'Laravel実践',
+            'author' => '佐藤花子',
+        ]);
+
+        $genreOnlyBook = Book::factory()->create([
+            'title' => 'PHP入門',
+            'author' => '鈴木一郎',
+        ]);
+
+        $matchedBook->genres()->attach($targetGenre->id);
+
+        $keywordOnlyBook->genres()->attach($otherGenre->id);
+
+        $genreOnlyBook->genres()->attach($targetGenre->id);
+
+        $response = $this->get(route('books.index', [
+            'keyword' => 'Laravel',
+            'genre' => $targetGenre->id,
+        ]));
+
+        $response->assertOk();
+
+        $response->assertSee($matchedBook->title);
+
+        $response->assertDontSee($keywordOnlyBook->title);
+        $response->assertDontSee($genreOnlyBook->title);
     }
 
     /** @test */
@@ -921,7 +960,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 認証済みユーザーは自分の登録した書籍を編集できる(): void
+    public function 認証済みユーザーは自分の登録した書籍を更新できる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
@@ -955,7 +994,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 他人が登録した書籍を編集しようとすると403エラーになる(): void
+    public function 他人が登録した書籍を更新しようとすると403エラーになる(): void
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
@@ -982,6 +1021,24 @@ class BookControllerTest extends TestCase
             'id' => $book->id,
             'title' => '更新前のタイトル',
         ]);
+    }
+
+    /** @test */
+    public function 存在しない書籍idで更新しようとすると404エラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->put(route('books.update', 999999), [
+                'title' => '更新後のタイトル',
+                'author' => '著者名',
+                'isbn' => '1234567890123',
+                'published_date' => '2026-08-19',
+                'genres' => [$genre->id],
+            ]);
+
+        $response->assertNotFound();
     }
 
     /** @test */
@@ -1121,6 +1178,14 @@ class BookControllerTest extends TestCase
 
         $book->genres()->attach($genre->id);
 
+        $review = Review::factory()->create([
+            'book_id' => $book->id,
+        ]);
+
+        $favorite = Favorite::factory()->create([
+            'book_id' => $book->id,
+        ]);
+
         $response = $this->actingAs($user)
             ->delete(route('books.destroy', $book));
 
@@ -1134,6 +1199,14 @@ class BookControllerTest extends TestCase
         $this->assertDatabaseMissing('book_genre', [
             'book_id' => $book->id,
             'genre_id' => $genre->id,
+        ]);
+
+        $this->assertDatabaseMissing('reviews', [
+            'id' => $review->id,
+        ]);
+
+        $this->assertDatabaseMissing('favorites', [
+            'id' => $favorite->id,
         ]);
     }
 
@@ -1155,5 +1228,16 @@ class BookControllerTest extends TestCase
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
         ]);
+    }
+
+    /** @test */
+    public function 存在しない書籍idで削除しようとすると404エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->delete(route('books.destroy', 999999));
+
+        $response->assertNotFound();
     }
 }

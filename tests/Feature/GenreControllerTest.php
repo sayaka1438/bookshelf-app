@@ -28,6 +28,37 @@ class GenreControllerTest extends TestCase
     }
 
     /** @test */
+    public function ジャンル一覧を名前順で表示できる(): void
+    {
+        $user = User::factory()->create();
+
+        $thirdGenre = Genre::factory()->create([
+            'name' => 'さしすせそ',
+        ]);
+
+        $firstGenre = Genre::factory()->create([
+            'name' => 'あいうえお',
+        ]);
+
+        $secondGenre = Genre::factory()->create([
+            'name' => 'かきくけこ',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('genres.index'));
+
+        $response->assertOk();
+
+        $response->assertViewHas('genres', function ($genres) use ($firstGenre, $secondGenre, $thirdGenre) {
+            return $genres->pluck('id')->all() === [
+                $firstGenre->id,
+                $secondGenre->id,
+                $thirdGenre->id,
+            ];
+        });
+    }
+
+    /** @test */
     public function 認証済みユーザーはジャンル詳細画面を表示できる(): void
     {
         $user = User::factory()->create();
@@ -45,6 +76,44 @@ class GenreControllerTest extends TestCase
 
         $response->assertViewHas('genre', $genre);
         $response->assertViewHas('books');
+    }
+
+    /** @test */
+    public function ジャンル詳細画面の書籍一覧をタイトル順で表示できる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $thirdBook = Book::factory()->create([
+            'title' => 'さしすせそ',
+        ]);
+
+        $firstBook = Book::factory()->create([
+            'title' => 'あいうえお',
+        ]);
+
+        $secondBook = Book::factory()->create([
+            'title' => 'かきくけこ',
+        ]);
+
+        $genre->books()->attach([
+            $thirdBook->id,
+            $firstBook->id,
+            $secondBook->id,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('genres.show', $genre));
+
+        $response->assertOk();
+
+        $response->assertViewHas('books', function ($books) use ($firstBook, $secondBook, $thirdBook) {
+            return $books->pluck('id')->all() === [
+                $firstBook->id,
+                $secondBook->id,
+                $thirdBook->id,
+            ];
+        });
     }
 
     /** @test */
@@ -224,7 +293,7 @@ class GenreControllerTest extends TestCase
     }
 
     /** @test */
-    public function 認証済みユーザーはジャンル名を編集できる(): void
+    public function 認証済みユーザーはジャンル名を更新できる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create([
@@ -243,6 +312,19 @@ class GenreControllerTest extends TestCase
             'id' => $genre->id,
             'name' => '更新後のジャンル名',
         ]);
+    }
+
+    /** @test */
+    public function 存在しないジャンルidで更新しようとすると404エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->put(route('genres.update', 999999), [
+                'name' => '更新後のジャンル名',
+            ]);
+
+        $response->assertNotFound();
     }
 
     /** @test */
@@ -329,6 +411,16 @@ class GenreControllerTest extends TestCase
         $this->assertDatabaseMissing('genres', [
             'id' => $genre->id,
         ]);
+    }
+
+    /** @test */
+    public function 存在しないジャンルidで削除しようとすると404エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->delete(route('genres.destroy', 999999));
+
+        $response->assertNotFound();
     }
 
     /** @test */

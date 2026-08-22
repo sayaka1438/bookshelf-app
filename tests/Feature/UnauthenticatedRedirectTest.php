@@ -322,4 +322,14 @@ class UnauthenticatedRedirectTest extends TestCase
 
         $response->assertRedirect(route('login'));
     }
+
+    /** @test */
+    public function 未認証ユーザーがisbn検索をするとログイン画面へリダイレクトされる(): void
+    {
+        $response = $this->get(route('books.isbn.search', [
+            'isbn' => '9784101010014',
+        ]));
+
+        $response->assertRedirect(route('login'));
+    }
 }

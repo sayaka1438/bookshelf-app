@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Book;
+use App\Models\Favorite;
 use App\Models\Genre;
 use App\Models\Review;
 use App\Models\User;
@@ -113,15 +114,17 @@ class BookControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(2, 'data');
 
-        $response->assertJsonFragment([
-            'id' => $titleMatchedBook->id,
-        ]);
-        $response->assertJsonFragment([
-            'id' => $authorMatchedBook->id,
-        ]);
-        $response->assertJsonMissing([
-            'id' => $unmatchedBook->id,
-        ]);
+        $bookIds = collect($response->json('data'))
+            ->pluck('id')
+            ->all();
+
+        $this->assertEqualsCanonicalizing(
+            [
+                $titleMatchedBook->id,
+                $authorMatchedBook->id,
+            ],
+            $bookIds,
+        );
     }
 
     /** @test */
@@ -155,18 +158,17 @@ class BookControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonCount(2, 'data');
+        $bookIds = collect($response->json('data'))
+            ->pluck('id')
+            ->all();
 
-        $response->assertJsonFragment([
-            'id' => $matchedBook1->id,
-        ]);
-
-        $response->assertJsonFragment([
-            'id' => $matchedBook2->id,
-        ]);
-
-        $response->assertJsonMissing([
-            'id' => $unmatchedBook->id,
-        ]);
+        $this->assertEqualsCanonicalizing(
+            [
+                $matchedBook1->id,
+                $matchedBook2->id,
+            ],
+            $bookIds
+        );
     }
 
     /** @test */
@@ -245,6 +247,47 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
+    public function キーワードとジャンルを組み合わせて検索できる(): void
+    {
+        $targetGenre = Genre::factory()->create();
+        $otherGenre = Genre::factory()->create();
+
+        $matchedBook = Book::factory()->create([
+            'title' => 'Laravel入門',
+            'author' => '山田太郎',
+        ]);
+
+        $keywordOnlyBook = Book::factory()->create([
+            'title' => 'Laravel実践',
+            'author' => '佐藤花子',
+        ]);
+
+        $genreOnlyBook = Book::factory()->create([
+            'title' => 'PHP入門',
+            'author' => '鈴木一郎',
+        ]);
+
+        $matchedBook->genres()->attach($targetGenre->id);
+
+        $keywordOnlyBook->genres()->attach($otherGenre->id);
+
+        $genreOnlyBook->genres()->attach($targetGenre->id);
+
+        $response = $this->getJson(route('api.books.index', [
+            'keyword' => 'Laravel',
+            'genre_id' => $targetGenre->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+
+        $this->assertSame(
+            [$matchedBook->id],
+            collect($response->json('data'))->pluck('id')->all()
+        );
+    }
+
+    /** @test */
     public function 未認証ユーザーは書籍詳細を取得できる(): void
     {
         $book = Book::factory()->create();
@@ -252,8 +295,9 @@ class BookControllerTest extends TestCase
 
         $book->genres()->attach($genre->id);
 
-        Review::factory()->create([
+        $review = Review::factory()->create([
             'book_id' => $book->id,
+            'comment' => 'テストレビュー',
         ]);
 
         $response = $this->getJson(route('api.books.show', $book));
@@ -288,7 +332,17 @@ class BookControllerTest extends TestCase
                 ],
             ],
         ]);
+
         $response->assertJsonPath('data.id', $book->id);
+
+        $response->assertJsonPath('data.genres.0.id', $genre->id);
+
+        $response->assertJsonPath('data.reviews.0.user.id', $review->user_id);
+
+        $response->assertJsonPath(
+            'data.reviews.0.comment',
+            'テストレビュー'
+        );
     }
 
     /** @test */
@@ -565,6 +619,28 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
+    public function 存在しない書籍idで更新しようとすると500エラーになる(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->putJson(route('api.books.update', 999999), [
+            'title' => '更新後のタイトル',
+            'author' => '著者名',
+            'isbn' => '1234567890123',
+            'published_date' => '2026-08-19',
+            'genres' => [$genre->id],
+        ]);
+
+        $response->assertStatus(500);
+        $response->assertJson([
+            'message' => '指定されたデータは存在しません。',
+        ]);
+    }
+
+    /** @test */
     public function 書籍更新時にジャンルの紐付けも更新される(): void
     {
         $user = User::factory()->create();
@@ -695,6 +771,10 @@ class BookControllerTest extends TestCase
             'book_id' => $book->id,
         ]);
 
+        $favorite = Favorite::factory()->create([
+            'book_id' => $book->id,
+        ]);
+
         $response = $this->deleteJson(route('api.books.destroy', $book));
 
         $response->assertNoContent();
@@ -710,6 +790,10 @@ class BookControllerTest extends TestCase
 
         $this->assertDatabaseMissing('reviews', [
             'id' => $review->id,
+        ]);
+
+        $this->assertDatabaseMissing('favorites', [
+            'id' => $favorite->id,
         ]);
     }
 
@@ -734,6 +818,21 @@ class BookControllerTest extends TestCase
 
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
+        ]);
+    }
+
+    /** @test */
+    public function 存在しない書籍idで削除しようとすると500エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->deleteJson(route('api.books.destroy', 999999));
+
+        $response->assertStatus(500);
+        $response->assertJson([
+            'message' => '指定されたデータは存在しません。',
         ]);
     }
 }

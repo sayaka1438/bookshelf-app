@@ -121,6 +121,19 @@ class AuthenticationTest extends TestCase
     }
 
     /** @test */
+    public function 会員登録時にメールアドレスが256文字以上だとバリデーションエラーになる(): void
+    {
+        $response = $this->post(route('register'), [
+            'name' => '山田太郎',
+            'email' => str_repeat('a', 244).'@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+    }
+
+    /** @test */
     public function 会員登録時にメールアドレスが不正な値だとバリデーションエラーになる(): void
     {
         $response = $this->post(route('register'), [
@@ -225,6 +238,19 @@ class AuthenticationTest extends TestCase
     }
 
     /** @test */
+    public function ログイン時にメールアドレスの形式が不正だとバリデーションエラーになる(): void
+    {
+        $response = $this->post(route('login'), [
+            'email' => '不正な値',
+            'password' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    /** @test */
     public function 存在しないメールアドレスではログインできない(): void
     {
         User::factory()->create();
@@ -235,6 +261,19 @@ class AuthenticationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    /** @test */
+    public function ログイン時にパスワードが空だとバリデーションエラーになる(): void
+    {
+        $response = $this->post(route('login'), [
+            'email' => 'test@example.com',
+            'password' => '',
+        ]);
+
+        $response->assertSessionHasErrors('password');
 
         $this->assertGuest();
     }
@@ -262,7 +301,7 @@ class AuthenticationTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('logout'));
 
-        $response->assertRedirect('/');
+        $response->assertRedirect(route('login'));
 
         $this->assertGuest();
     }

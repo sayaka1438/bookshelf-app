@@ -6,6 +6,7 @@ use App\Models\ReadingPlan;
 use App\Models\User;
 use App\Notifications\ReadingPlanReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Str;
 use Tests\TestCase;
 
 class NotificationControllerTest extends TestCase
@@ -24,6 +25,47 @@ class NotificationControllerTest extends TestCase
         $response->assertViewIs('notifications.index');
 
         $response->assertViewHas('notifications');
+    }
+
+    /** @test */
+    public function 通知一覧を新しい順で表示できる(): void
+    {
+        $user = User::factory()->create();
+
+        $oldNotification = $user->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => ReadingPlanReminderNotification::class,
+            'data' => [],
+            'created_at' => now()->subDays(2),
+        ]);
+
+        $newNotification = $user->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => ReadingPlanReminderNotification::class,
+            'data' => [],
+            'created_at' => now(),
+        ]);
+
+        $middleNotification = $user->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => ReadingPlanReminderNotification::class,
+            'data' => [],
+            'created_at' => now()->subDay(),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('notifications.index'));
+
+        $response->assertOk();
+
+        $response->assertViewHas(
+            'notifications',
+            fn ($notifications) => $notifications->pluck('id')->all() === [
+                $newNotification->id,
+                $middleNotification->id,
+                $oldNotification->id,
+            ]
+        );
     }
 
     /** @test */
@@ -53,8 +95,9 @@ class NotificationControllerTest extends TestCase
 
         $response->assertOk();
 
-        $response->assertViewHas('notifications', function ($notifications) {
-            return $notifications->count() === 1;
+        $response->assertViewHas('notifications', function ($notifications) use ($user) {
+            return $notifications->count() === 1
+                && $notifications->first()->notifiable_id === $user->id;
         });
     }
 
