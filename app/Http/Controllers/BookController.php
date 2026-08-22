@@ -166,6 +166,7 @@ class BookController extends Controller
 
         DB::transaction(function () use ($book, $validated, $genres) {
             $book->update($validated);
+
             $book->genres()->sync($genres);
         });
 

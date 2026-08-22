@@ -8,7 +8,7 @@ use Illuminate\Http\RedirectResponse;
 class ReviewLikeController extends Controller
 {
     /**
-     * レビューのいいねを追加または解除する。
+     * レビューのいいねを追加または解除する
      *
      * @param  Review  $review  対象のレビュー
      * @return RedirectResponse 元の画面へリダイレクト

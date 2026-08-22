@@ -8,7 +8,7 @@ use Illuminate\View\View;
 class RankingController extends Controller
 {
     /**
-     * ランキング一覧を表示する。
+     * ランキング一覧を表示する
      *
      * @return View ランキング一覧画面
      */

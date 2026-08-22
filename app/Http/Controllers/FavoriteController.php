@@ -9,7 +9,7 @@ use Illuminate\View\View;
 class FavoriteController extends Controller
 {
     /**
-     * お気に入りを追加または解除する。
+     * お気に入りを追加または解除する
      *
      * @param  Book  $book  対象の書籍
      * @return RedirectResponse 元の画面へリダイレクト
@@ -30,7 +30,7 @@ class FavoriteController extends Controller
     }
 
     /**
-     * お気に入り一覧を表示する。
+     * お気に入り一覧を表示する
      *
      * @return View お気に入り一覧画面
      */

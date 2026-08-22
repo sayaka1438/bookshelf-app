@@ -11,7 +11,7 @@ use Illuminate\View\View;
 class GenreController extends Controller
 {
     /**
-     * ジャンル一覧を表示する。
+     * ジャンル一覧を表示する
      *
      * @return View ジャンル一覧画面
      */
@@ -25,7 +25,7 @@ class GenreController extends Controller
     }
 
     /**
-     * ジャンル登録画面を表示する。
+     * ジャンル登録画面を表示する
      *
      * @return View ジャンル登録画面
      */
@@ -35,7 +35,7 @@ class GenreController extends Controller
     }
 
     /**
-     * ジャンルを登録する。
+     * ジャンルを登録する
      *
      * @param  StoreGenreRequest  $request  ジャンル登録用の入力値
      * @return RedirectResponse ジャンル一覧画面へリダイレクト
@@ -49,7 +49,7 @@ class GenreController extends Controller
     }
 
     /**
-     * ジャンル詳細を表示する。
+     * ジャンル詳細を表示する
      *
      * @param  Genre  $genre  対象のジャンル
      * @return View ジャンル詳細画面
@@ -65,7 +65,7 @@ class GenreController extends Controller
     }
 
     /**
-     * ジャンル編集画面を表示する。
+     * ジャンル編集画面を表示する
      *
      * @param  Genre  $genre  対象のジャンル
      * @return View ジャンル編集画面
@@ -76,7 +76,7 @@ class GenreController extends Controller
     }
 
     /**
-     * ジャンルを更新する。
+     * ジャンルを更新する
      *
      * @param  UpdateGenreRequest  $request  ジャンル更新用の入力値
      * @param  Genre  $genre  対象のジャンル
@@ -91,7 +91,7 @@ class GenreController extends Controller
     }
 
     /**
-     * ジャンルを削除する。
+     * ジャンルを削除する
      *
      * @param  Genre  $genre  対象のジャンル
      * @return RedirectResponse ジャンル一覧画面へリダイレクト
