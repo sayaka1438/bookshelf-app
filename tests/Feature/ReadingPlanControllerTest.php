@@ -226,7 +226,7 @@ class ReadingPlanControllerTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors([
-            'book_id' => 'この書籍にはすでに読書計画があります。',
+            'book_id' => 'この書籍は既に進行中の読書計画が存在します。',
         ]);
 
         $this->assertDatabaseCount('reading_plans', 1);

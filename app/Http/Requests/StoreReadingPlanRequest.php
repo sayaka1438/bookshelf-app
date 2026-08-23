@@ -45,7 +45,7 @@ class StoreReadingPlanRequest extends FormRequest
                 if ($alreadyExists) {
                     $validator->errors()->add(
                         'book_id',
-                        'この書籍にはすでに読書計画があります。'
+                        'この書籍は既に進行中の読書計画が存在します。'
                     );
                 }
             },
@@ -66,6 +66,7 @@ class StoreReadingPlanRequest extends FormRequest
             'book_id.required' => '書籍を選択してください。',
             'book_id.integer' => '書籍を選択してください。',
             'book_id.exists' => '選択された書籍は存在しません。',
+            'target_date.required' => '期日は必須です。',
             'target_date.after_or_equal' => '期日は今日以降の日付を指定してください。',
         ];
     }

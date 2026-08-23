@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('book_id')->constrained()->cascadeOnDelete();
             $table->integer('rating')->unsigned()->check('rating >= 1 AND rating <= 5');
-            $table->text('comment')->nullable();
+            $table->text('comment');
             // 同一ユーザーによる同一書籍への重複レビューを防止
             $table->unique(['user_id', 'book_id']);
             $table->timestamps();
