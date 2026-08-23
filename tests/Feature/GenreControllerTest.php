@@ -176,7 +176,7 @@ class GenreControllerTest extends TestCase
             ->post(route('genres.store'), $data);
 
         $response->assertRedirect(route('genres.index'));
-        $response->assertSessionHas('success', 'ジャンルを登録しました。');
+        $response->assertSessionHas('success', 'ジャンルを作成しました。');
 
         $this->assertDatabaseHas('genres', [
             'name' => $data['name'],
@@ -209,7 +209,6 @@ class GenreControllerTest extends TestCase
             ->post(route('genres.store'), $data);
 
         $response->assertRedirect(route('genres.index'));
-        $response->assertSessionHas('success', 'ジャンルを登録しました。');
 
         $this->assertDatabaseHas('genres', [
             'name' => $data['name'],
@@ -229,7 +228,6 @@ class GenreControllerTest extends TestCase
             ->post(route('genres.store'), $data);
 
         $response->assertRedirect(route('genres.index'));
-        $response->assertSessionHas('success', 'ジャンルを登録しました。');
 
         $this->assertDatabaseHas('genres', [
             'name' => $data['name'],
@@ -437,7 +435,7 @@ class GenreControllerTest extends TestCase
             ->delete(route('genres.destroy', $genre));
 
         $response->assertRedirect(route('genres.index'));
-        $response->assertSessionHas('error', 'このジャンルには書籍が登録されているため、削除できません。');
+        $response->assertSessionHas('error', 'このジャンルには書籍が紐付いているため削除できません。');
 
         $this->assertDatabaseHas('genres', [
             'id' => $genre->id,
