@@ -45,7 +45,7 @@ class GenreController extends Controller
         Genre::create($request->validated());
 
         return redirect()->route('genres.index')
-            ->with('success', 'ジャンルを登録しました。');
+            ->with('success', 'ジャンルを作成しました。');
     }
 
     /**
@@ -100,7 +100,7 @@ class GenreController extends Controller
     {
         if ($genre->books()->exists()) {
             return redirect()->route('genres.index')
-                ->with('error', 'このジャンルには書籍が登録されているため、削除できません。');
+                ->with('error', 'このジャンルには書籍が紐付いているため削除できません。');
         }
 
         $genre->delete();

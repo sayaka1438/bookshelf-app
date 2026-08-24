@@ -117,6 +117,7 @@ class BookSeeder extends Seeder
         ];
 
         $users = User::all();
+        $genres = Genre::pluck('id', 'name');
 
         foreach ($books as $book) {
             $genreNames = $book['genres'];
@@ -127,7 +128,8 @@ class BookSeeder extends Seeder
 
             $createdBook = Book::firstOrCreate(['isbn' => $book['isbn']], $book);
 
-            $genreIds = Genre::whereIn('name', $genreNames)->pluck('id');
+            $genreIds = collect($genreNames)
+                ->map(fn ($genreName) => $genres[$genreName]);
 
             $createdBook->genres()->sync($genreIds);
         }

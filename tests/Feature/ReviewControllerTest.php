@@ -148,28 +148,18 @@ class ReviewControllerTest extends TestCase
     }
 
     /** @test */
-    public function レビュー投稿時にコメントが未入力でも投稿できる(): void
+    public function レビュー投稿時にコメントが空だとバリデーションエラーになる(): void
     {
         $user = User::factory()->create();
         $book = Book::factory()->create();
 
-        $data = [
-            'rating' => 3,
-            'comment' => '',
-        ];
-
         $response = $this->actingAs($user)
-            ->post(route('reviews.store', $book), $data);
+            ->post(route('reviews.store', $book), [
+                'rating' => 3,
+                'comment' => '',
+            ]);
 
-        $response->assertRedirect(route('books.show', $book));
-        $response->assertSessionHas('success', 'レビューを投稿しました。');
-
-        $this->assertDatabaseHas('reviews', [
-            'user_id' => $user->id,
-            'book_id' => $book->id,
-            'rating' => $data['rating'],
-            'comment' => null,
-        ]);
+        $response->assertSessionHasErrors('comment');
     }
 
     /** @test */

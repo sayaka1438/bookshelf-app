@@ -10,7 +10,7 @@ class FavoriteSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::pluck('id', 'email');
+        $users = User::all()->keyBy('email');
         $books = Book::pluck('id', 'isbn');
 
         $favorites = [
@@ -46,12 +46,13 @@ class FavoriteSeeder extends Seeder
         ];
 
         foreach ($favorites as $email => $isbnList) {
-            $user = User::findOrFail($users[$email]);
+            $user = $users[$email];
 
             $bookIds = collect($isbnList)
-                ->map(fn (string $isbn) => $books[$isbn]);
+                ->map(fn ($isbn) => $books[$isbn]);
 
-            $user->favoriteBooks()->syncWithoutDetaching($bookIds);
+            $user->favoriteBooks()
+                ->syncWithoutDetaching($bookIds);
         }
     }
 }
