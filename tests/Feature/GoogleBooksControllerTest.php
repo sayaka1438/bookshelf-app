@@ -28,7 +28,7 @@ class GoogleBooksControllerTest extends TestCase
                             'publishedDate' => '2012-06-23',
                             'description' => '説明文',
                             'imageLinks' => [
-                                'thumbnail' => 'https://example.com/image.jpg',
+                                'thumbnail' => 'http://example.com/image.jpg',
                             ],
                         ],
                     ],
