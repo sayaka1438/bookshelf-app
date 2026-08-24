@@ -346,13 +346,30 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 存在しない書籍idだと500エラーになる(): void
+    public function 書籍詳細の出版日は日付形式で取得できる(): void
+    {
+        $book = Book::factory()->create([
+            'published_date' => '1905-01-01',
+        ]);
+
+        $response = $this->getJson(route('api.books.show', $book));
+
+        $response->assertOk();
+
+        $response->assertJsonPath(
+            'data.published_date',
+            '1905-01-01'
+        );
+    }
+
+    /** @test */
+    public function 存在しない書籍idだと404エラーになる(): void
     {
         $response = $this->getJson(route('api.books.show', 999999));
 
-        $response->assertStatus(500);
+        $response->assertStatus(404);
         $response->assertJson([
-            'message' => '指定されたデータは存在しません。',
+            'error' => '書籍が見つかりませんでした。',
         ]);
     }
 
@@ -371,7 +388,7 @@ class BookControllerTest extends TestCase
 
         $response->assertUnauthorized();
         $response->assertJson([
-            'message' => '認証が必要です。',
+            'message' => 'Unauthenticated.',
         ]);
 
         $this->assertDatabaseMissing('books', [
@@ -544,7 +561,7 @@ class BookControllerTest extends TestCase
 
         $response->assertUnauthorized();
         $response->assertJson([
-            'message' => '認証が必要です。',
+            'message' => 'Unauthenticated.',
         ]);
 
         $this->assertDatabaseHas('books', [
@@ -609,7 +626,7 @@ class BookControllerTest extends TestCase
 
         $response->assertForbidden();
         $response->assertJson([
-            'message' => 'この操作を行う権限がありません。',
+            'error' => 'この操作を行う権限がありません。',
         ]);
 
         $this->assertDatabaseHas('books', [
@@ -619,7 +636,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 存在しない書籍idで更新しようとすると500エラーになる(): void
+    public function 存在しない書籍idで更新しようとすると404エラーになる(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create();
@@ -634,9 +651,9 @@ class BookControllerTest extends TestCase
             'genres' => [$genre->id],
         ]);
 
-        $response->assertStatus(500);
+        $response->assertStatus(404);
         $response->assertJson([
-            'message' => '指定されたデータは存在しません。',
+            'error' => '書籍が見つかりませんでした。',
         ]);
     }
 
@@ -746,7 +763,7 @@ class BookControllerTest extends TestCase
 
         $response->assertUnauthorized();
         $response->assertJson([
-            'message' => '認証が必要です。',
+            'message' => 'Unauthenticated.',
         ]);
 
         $this->assertDatabaseHas('books', [
@@ -813,7 +830,7 @@ class BookControllerTest extends TestCase
 
         $response->assertForbidden();
         $response->assertJson([
-            'message' => 'この操作を行う権限がありません。',
+            'error' => 'この操作を行う権限がありません。',
         ]);
 
         $this->assertDatabaseHas('books', [
@@ -822,7 +839,7 @@ class BookControllerTest extends TestCase
     }
 
     /** @test */
-    public function 存在しない書籍idで削除しようとすると500エラーになる(): void
+    public function 存在しない書籍idで削除しようとすると404エラーになる(): void
     {
         $user = User::factory()->create();
 
@@ -830,9 +847,9 @@ class BookControllerTest extends TestCase
 
         $response = $this->deleteJson(route('api.books.destroy', 999999));
 
-        $response->assertStatus(500);
+        $response->assertStatus(404);
         $response->assertJson([
-            'message' => '指定されたデータは存在しません。',
+            'error' => '書籍が見つかりませんでした。',
         ]);
     }
 }

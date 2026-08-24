@@ -37,20 +37,20 @@ class Handler extends ExceptionHandler
         if ($request->is('api/*')) {
             if ($e instanceof AuthenticationException) {
                 return response()->json([
-                    'message' => '認証が必要です。',
+                    'message' => 'Unauthenticated.',
                 ], 401);
             }
 
             if ($e instanceof AuthorizationException) {
                 return response()->json([
-                    'message' => 'この操作を行う権限がありません。',
+                    'error' => 'この操作を行う権限がありません。',
                 ], 403);
             }
 
             if ($e instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => '指定されたデータは存在しません。',
-                ], 500);
+                    'error' => '書籍が見つかりませんでした。',
+                ], 404);
             }
         }
 
