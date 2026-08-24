@@ -45,6 +45,12 @@ class GoogleBooksController extends Controller
             $publishedDate = null;
         }
 
+        $imageUrl = $volumeInfo['imageLinks']['thumbnail'] ?? null;
+
+        if ($imageUrl) {
+            $imageUrl = preg_replace('/^http:\/\//', 'https://', $imageUrl);
+        }
+
         return response()->json([
             'title' => $volumeInfo['title'] ?? null,
             'author' => ! empty($volumeInfo['authors'])
@@ -52,7 +58,7 @@ class GoogleBooksController extends Controller
                 : null,
             'published_date' => $publishedDate,
             'description' => $volumeInfo['description'] ?? null,
-            'image_url' => $volumeInfo['imageLinks']['thumbnail'] ?? null,
+            'image_url' => $imageUrl,
         ]);
     }
 }
