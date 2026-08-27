@@ -406,6 +406,58 @@ class ReadingPlanControllerTest extends TestCase
     }
 
     /** @test */
+    public function 期限切れ計画の期日を更新すると進行中へ戻る(): void
+    {
+        $user = User::factory()->create();
+
+        $readingPlan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'target_date' => today()->subDay()->toDateString(),
+            'status' => ReadingPlanStatus::Expired,
+        ]);
+
+        $data = [
+            'target_date' => today()->addDay()->toDateString(),
+        ];
+
+        $response = $this->actingAs($user)
+            ->put(route('reading-plans.update', $readingPlan), $data);
+
+        $response->assertRedirect(route('reading-plans.index'));
+
+        $this->assertDatabaseHas('reading_plans', [
+            'id' => $readingPlan->id,
+            'target_date' => $data['target_date'],
+            'status' => ReadingPlanStatus::InProgress->value,
+        ]);
+    }
+
+    /** @test */
+    public function 完了済み計画は更新しようとすると403エラーになる(): void
+    {
+        $user = User::factory()->create();
+
+        $readingPlan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'target_date' => today()->toDateString(),
+            'status' => ReadingPlanStatus::Completed,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->put(route('reading-plans.update', $readingPlan), [
+                'target_date' => today()->addDay()->toDateString(),
+            ]);
+
+        $response->assertForbidden();
+
+        $this->assertDatabaseHas('reading_plans', [
+            'id' => $readingPlan->id,
+            'target_date' => today()->toDateString(),
+            'status' => ReadingPlanStatus::Completed->value,
+        ]);
+    }
+
+    /** @test */
     public function 他人が登録した読書計画を更新しようとすると403エラーになる(): void
     {
         $user = User::factory()->create();
