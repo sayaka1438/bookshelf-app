@@ -101,7 +101,13 @@ class ReadingPlanController extends Controller
     {
         $this->authorize('update', $plan);
 
-        $plan->update($request->validated());
+        $validated = $request->validated();
+
+        if ($plan->status === ReadingPlanStatus::Expired) {
+            $validated['status'] = ReadingPlanStatus::InProgress;
+        }
+
+        $plan->update($validated);
 
         return redirect()->route('reading-plans.index')
             ->with('success', '読書計画を更新しました。');

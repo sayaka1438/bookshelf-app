@@ -13,7 +13,8 @@ class ReadingPlanPolicy
      */
     public function update(User $user, ReadingPlan $plan): bool
     {
-        return $user->id === $plan->user_id;
+        return $user->id === $plan->user_id
+            && $plan->status !== ReadingPlanStatus::Completed;
     }
 
     /**
