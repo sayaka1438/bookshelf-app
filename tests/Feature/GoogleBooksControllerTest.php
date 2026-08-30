@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -158,6 +159,28 @@ class GoogleBooksControllerTest extends TestCase
 
         $response->assertJson([
             'error' => '書籍情報の取得に失敗しました。',
+        ]);
+    }
+
+    /** @test */
+    public function google_books_apiの通信で例外が発生すると500とエラーメッセージを返す(): void
+    {
+        $user = User::factory()->create();
+
+        Http::fake(function () {
+            throw new ConnectionException('接続に失敗しました。');
+        });
+
+        $response = $this->actingAs($user)->get(
+            route('books.isbn.search', [
+                'isbn' => '9784101010014',
+            ])
+        );
+
+        $response->assertStatus(500);
+
+        $response->assertJson([
+            'error' => 'API通信エラーが発生しました。',
         ]);
     }
 
