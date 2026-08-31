@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ReadingPlanStatus;
 use Illuminate\View\View;
 
 class ReportController extends Controller
@@ -80,12 +79,12 @@ class ReportController extends Controller
             'summary' => [
                 'total_reviews' => $userReviews->count(),
 
-                'books_read' => $user
-                    ->readingPlans()
-                    ->where('status', ReadingPlanStatus::Completed)
+                'books_read' => $userReviews
+                    ->pluck('book_id')
+                    ->unique()
                     ->count(),
 
-                'average_rating' => $userReviews->avg('rating'),
+                'average_rating' => $userReviews->avg('rating') ?? 0,
             ],
             'rating_distribution' => $ratingDistribution,
             'top_rated_books' => $topRatedBooks,

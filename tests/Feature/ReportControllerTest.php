@@ -2,10 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Enums\ReadingPlanStatus;
 use App\Models\Book;
 use App\Models\Genre;
-use App\Models\ReadingPlan;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +14,7 @@ class ReportControllerTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function 認証済みユーザーはマイ読書レポートを表示できる(): void
+    public function 認証済みユーザーはレビューが0件でもマイ読書レポートを正常に表示できる(): void
     {
         $user = User::factory()->create();
 
@@ -26,7 +24,14 @@ class ReportControllerTest extends TestCase
         $response->assertOk();
         $response->assertViewIs('reports.index');
 
-        $response->assertViewHas('stats');
+        $response->assertViewHas('stats', function ($stats) {
+            return $stats['summary']['total_reviews'] === 0
+                && $stats['summary']['books_read'] === 0
+                && $stats['summary']['average_rating'] === 0
+                && $stats['rating_distribution']->all() === [0, 0, 0, 0, 0]
+                && $stats['top_rated_books']->isEmpty()
+                && $stats['genre_ratings']->isEmpty();
+        });
     }
 
     /** @test */
@@ -54,17 +59,17 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function 読了冊数は完了した読書計画のみ集計できる(): void
+    public function 読了冊数は自分がレビューした書籍数を集計できる(): void
     {
         $user = User::factory()->create();
+        $otherUser = User::factory()->create();
 
-        ReadingPlan::factory()->count(2)->create([
+        Review::factory()->count(2)->create([
             'user_id' => $user->id,
-            'status' => ReadingPlanStatus::Completed,
         ]);
 
-        ReadingPlan::factory()->count(3)->create([
-            'user_id' => $user->id,
+        Review::factory()->count(3)->create([
+            'user_id' => $otherUser->id,
         ]);
 
         $response = $this->actingAs($user)
