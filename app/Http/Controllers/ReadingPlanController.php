@@ -9,6 +9,7 @@ use App\Models\Book;
 use App\Models\ReadingPlan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ReadingPlanController extends Controller
@@ -44,6 +45,7 @@ class ReadingPlanController extends Controller
     {
         $registeredBookIds = auth()->user()
             ->readingPlans()
+            ->where('status', ReadingPlanStatus::InProgress)
             ->pluck('book_id');
 
         $books = Book::whereNotIn('id', $registeredBookIds)
@@ -123,7 +125,13 @@ class ReadingPlanController extends Controller
     {
         $this->authorize('delete', $plan);
 
-        $plan->delete();
+        DB::transaction(function () use ($plan): void {
+            auth()->user()->notifications()
+                ->where('data->plan_id', $plan->id)
+                ->delete();
+
+            $plan->delete();
+        });
 
         return redirect()->route('reading-plans.index')
             ->with('success', '読書計画を削除しました。');
