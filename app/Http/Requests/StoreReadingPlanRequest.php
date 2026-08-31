@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ReadingPlanStatus;
 use App\Models\ReadingPlan;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -40,6 +41,7 @@ class StoreReadingPlanRequest extends FormRequest
 
                 $alreadyExists = ReadingPlan::where('user_id', auth()->id())
                     ->where('book_id', $this->integer('book_id'))
+                    ->where('status', ReadingPlanStatus::InProgress)
                     ->exists();
 
                 if ($alreadyExists) {

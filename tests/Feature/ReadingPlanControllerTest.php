@@ -6,6 +6,7 @@ use App\Enums\ReadingPlanStatus;
 use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
+use App\Notifications\ReadingPlanReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -128,7 +129,7 @@ class ReadingPlanControllerTest extends TestCase
     }
 
     /** @test */
-    public function 登録済みの書籍は読書計画登録画面に表示されない(): void
+    public function 進行中の読書計画がある書籍は登録画面に表示されない(): void
     {
         $user = User::factory()->create();
 
@@ -139,6 +140,7 @@ class ReadingPlanControllerTest extends TestCase
         ReadingPlan::factory()->create([
             'user_id' => $user->id,
             'book_id' => $registeredBook->id,
+            'status' => ReadingPlanStatus::InProgress,
         ]);
 
         $response = $this->actingAs($user)
@@ -149,6 +151,39 @@ class ReadingPlanControllerTest extends TestCase
         $response->assertViewHas('books', function ($books) use ($registeredBook, $unregisteredBook) {
             return ! $books->contains($registeredBook)
                 && $books->contains($unregisteredBook);
+        });
+    }
+
+    /** @test */
+    public function 完了済みや期限切れの読書計画がある書籍は登録画面に表示される(): void
+    {
+        $user = User::factory()->create();
+
+        $completedBook = Book::factory()->create();
+        $expiredBook = Book::factory()->create();
+
+        ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $completedBook->id,
+            'status' => ReadingPlanStatus::Completed,
+            'completed_at' => now(),
+        ]);
+
+        ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $expiredBook->id,
+            'target_date' => today()->subDay(),
+            'status' => ReadingPlanStatus::Expired,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('reading-plans.create'));
+
+        $response->assertOk();
+
+        $response->assertViewHas('books', function ($books) use ($completedBook, $expiredBook) {
+            return $books->contains($completedBook)
+                && $books->contains($expiredBook);
         });
     }
 
@@ -209,7 +244,7 @@ class ReadingPlanControllerTest extends TestCase
     }
 
     /** @test */
-    public function 同一ユーザーが同じ書籍に2件目の読書計画を登録しようとするとバリデーションエラーになる(): void
+    public function 同一ユーザーの同じ書籍に進行中の読書計画があると登録できない(): void
     {
         $user = User::factory()->create();
         $book = Book::factory()->create();
@@ -217,6 +252,30 @@ class ReadingPlanControllerTest extends TestCase
         ReadingPlan::factory()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
+            'status' => ReadingPlanStatus::InProgress,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('reading-plans.store'), [
+            'book_id' => $book->id,
+            'target_date' => today()->toDateString(),
+        ]);
+
+        $response->assertSessionHasErrors(['book_id' => 'この書籍は既に進行中の読書計画が存在します。']);
+
+        $this->assertDatabaseCount('reading_plans', 1);
+    }
+
+    /** @test */
+    public function 同じ書籍の読書計画が完了済みなら新しい計画を登録できる(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'status' => ReadingPlanStatus::Completed,
+            'completed_at' => now(),
         ]);
 
         $response = $this->actingAs($user)
@@ -225,11 +284,47 @@ class ReadingPlanControllerTest extends TestCase
                 'target_date' => today()->toDateString(),
             ]);
 
-        $response->assertSessionHasErrors([
-            'book_id' => 'この書籍は既に進行中の読書計画が存在します。',
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('reading-plans.index'));
+
+        $this->assertDatabaseCount('reading_plans', 2);
+
+        $this->assertDatabaseHas('reading_plans', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'status' => ReadingPlanStatus::InProgress->value,
+        ]);
+    }
+
+    /** @test */
+    public function 同じ書籍の読書計画が期限切れなら新しい計画を登録できる(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'target_date' => now()->subDay(),
+            'status' => ReadingPlanStatus::Expired,
         ]);
 
-        $this->assertDatabaseCount('reading_plans', 1);
+        $response = $this->actingAs($user)
+            ->post(route('reading-plans.store'), [
+                'book_id' => $book->id,
+                'target_date' => today()->toDateString(),
+            ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('reading-plans.index'));
+
+        $this->assertDatabaseCount('reading_plans', 2);
+
+        $this->assertDatabaseHas('reading_plans', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'status' => ReadingPlanStatus::InProgress->value,
+        ]);
     }
 
     /** @test */
@@ -387,6 +482,7 @@ class ReadingPlanControllerTest extends TestCase
         $readingPlan = ReadingPlan::factory()->create([
             'user_id' => $user->id,
             'target_date' => today()->toDateString(),
+            'status' => ReadingPlanStatus::InProgress,
         ]);
 
         $data = [
@@ -402,6 +498,41 @@ class ReadingPlanControllerTest extends TestCase
         $this->assertDatabaseHas('reading_plans', [
             'id' => $readingPlan->id,
             'target_date' => $data['target_date'],
+        ]);
+    }
+
+    /** @test */
+    public function 同じ書籍に別の進行中の計画があると期限切れ計画を更新できない(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $expiredPlan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'target_date' => today()->subDay(),
+            'status' => ReadingPlanStatus::Expired,
+        ]);
+
+        ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'status' => ReadingPlanStatus::InProgress,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->put(route('reading-plans.update', $expiredPlan), [
+                'target_date' => today()->toDateString(),
+            ]);
+
+        $response->assertSessionHasErrors([
+            'target_date' => 'この書籍は既に進行中の読書計画が存在します。',
+        ]);
+
+        $this->assertDatabaseHas('reading_plans', [
+            'id' => $expiredPlan->id,
+            'target_date' => today()->subDay()->toDateString(),
+            'status' => ReadingPlanStatus::Expired->value,
         ]);
     }
 
@@ -545,6 +676,49 @@ class ReadingPlanControllerTest extends TestCase
 
         $this->assertDatabaseMissing('reading_plans', [
             'id' => $readingPlan->id,
+        ]);
+    }
+
+    /** @test */
+    public function 読書計画を削除すると関連通知だけが削除される(): void
+    {
+        $user = User::factory()->create();
+
+        $readingPlan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        $otherPlan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        $user->notify(
+            new ReadingPlanReminderNotification($readingPlan, 'three_days_before')
+        );
+
+        $user->notify(
+            new ReadingPlanReminderNotification($otherPlan, 'three_days_before')
+        );
+
+        $this->assertDatabaseHas('notifications', [
+            'data->plan_id' => $readingPlan->id,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->delete(route('reading-plans.destroy', $readingPlan));
+
+        $response->assertRedirect(route('reading-plans.index'));
+
+        $this->assertDatabaseMissing('reading_plans', [
+            'id' => $readingPlan->id,
+        ]);
+
+        $this->assertDatabaseMissing('notifications', [
+            'data->plan_id' => $readingPlan->id,
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'data->plan_id' => $otherPlan->id,
         ]);
     }
 

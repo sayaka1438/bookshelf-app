@@ -55,6 +55,7 @@ class ReadingPlanReminderNotificationTest extends TestCase
         $data = $notification->toArray($user);
 
         $this->assertSame([
+            'plan_id' => $readingPlan->id,
             'title' => '読書計画リマインダー',
             'body' => '『テストタイトル』の期日まであと3日です。',
             'timing' => 'three_days_before',
@@ -83,6 +84,7 @@ class ReadingPlanReminderNotificationTest extends TestCase
         $data = $notification->toArray($user);
 
         $this->assertSame([
+            'plan_id' => $readingPlan->id,
             'title' => '読書計画リマインダー',
             'body' => '『テストタイトル』が本日期日です。',
             'timing' => 'on_due_date',
@@ -111,6 +113,7 @@ class ReadingPlanReminderNotificationTest extends TestCase
         $data = $notification->toArray($user);
 
         $this->assertSame([
+            'plan_id' => $readingPlan->id,
             'title' => '読書計画リマインダー',
             'body' => '『テストタイトル』の期日を3日過ぎています。',
             'timing' => 'three_days_after',
@@ -139,6 +142,7 @@ class ReadingPlanReminderNotificationTest extends TestCase
         $data = $notification->toArray($user);
 
         $this->assertSame([
+            'plan_id' => $readingPlan->id,
             'title' => '読書計画リマインダー',
             'body' => '読書計画の通知です。',
             'timing' => 'unknown',

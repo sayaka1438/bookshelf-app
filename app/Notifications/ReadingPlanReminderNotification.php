@@ -36,6 +36,7 @@ class ReadingPlanReminderNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'plan_id' => $this->readingPlan->id,
             'title' => '読書計画リマインダー',
             'body' => match ($this->timing) {
                 'three_days_before' => "『{$this->readingPlan->book->title}』の期日まであと3日です。",
