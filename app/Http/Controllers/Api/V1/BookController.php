@@ -47,7 +47,7 @@ class BookController extends Controller
             });
         }
 
-        $perPage = $validated['per_page'] ?? 10;
+        $perPage = $validated['per_page'] ?? 20;
 
         $books = $query->latest()->paginate($perPage);
 

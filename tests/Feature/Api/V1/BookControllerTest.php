@@ -18,14 +18,15 @@ class BookControllerTest extends TestCase
     /** @test */
     public function 未認証ユーザーはページネーションされた書籍一覧を取得できる(): void
     {
-        Book::factory()->count(15)->create();
+        Book::factory()->count(25)->create();
 
         $response = $this->getJson(route('api.books.index'));
 
         $response->assertOk();
 
-        $response->assertJsonCount(10, 'data');
-        $response->assertJsonPath('meta.total', 15);
+        $response->assertJsonCount(20, 'data');
+        $response->assertJsonPath('meta.per_page', 20);
+        $response->assertJsonPath('meta.total', 25);
     }
 
     /** @test */
@@ -185,7 +186,7 @@ class BookControllerTest extends TestCase
     /** @test */
     public function 指定したページのデータを取得できる(): void
     {
-        Book::factory()->count(15)->create();
+        Book::factory()->count(25)->create();
 
         $response = $this->getJson(route('api.books.index', [
             'page' => 2,
