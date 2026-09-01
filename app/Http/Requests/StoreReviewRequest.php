@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Review;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
 
 class StoreReviewRequest extends FormRequest
 {
@@ -27,30 +25,6 @@ class StoreReviewRequest extends FormRequest
         return [
             'rating' => 'required|integer|between:1,5',
             'comment' => 'required|string|max:1000',
-        ];
-    }
-
-    public function after(): array
-    {
-        return [
-            function (Validator $validator): void {
-                if ($validator->errors()->has('rating')) {
-                    return;
-                }
-
-                $book = $this->route('book');
-
-                $alreadyReviewed = Review::where('user_id', auth()->id())
-                    ->where('book_id', $book->id)
-                    ->exists();
-
-                if ($alreadyReviewed) {
-                    $validator->errors()->add(
-                        'rating',
-                        'この書籍にはすでにレビューを投稿しています。'
-                    );
-                }
-            },
         ];
     }
 

@@ -203,7 +203,7 @@ class ReviewControllerTest extends TestCase
     }
 
     /** @test */
-    public function 同一ユーザーが同じ書籍に2件目のレビューをするとバリデーションエラーになる(): void
+    public function 同一ユーザーは同じ書籍に複数のレビューを投稿できる(): void
     {
         $user = User::factory()->create();
         $book = Book::factory()->create();
@@ -213,17 +213,25 @@ class ReviewControllerTest extends TestCase
             'book_id' => $book->id,
         ]);
 
+        $data = [
+            'rating' => 3,
+            'comment' => 'テストコメント',
+        ];
+
         $response = $this->actingAs($user)
-            ->post(route('reviews.store', $book), [
-                'rating' => 3,
-                'comment' => 'テストコメント',
-            ]);
+            ->post(route('reviews.store', $book), $data);
 
-        $response->assertSessionHasErrors([
-            'rating' => 'この書籍にはすでにレビューを投稿しています。',
+        $response->assertRedirect(route('books.show', $book));
+        $response->assertSessionHas('success', 'レビューを投稿しました。');
+
+        $this->assertDatabaseCount('reviews', 2);
+
+        $this->assertDatabaseHas('reviews', [
+            'book_id' => $book->id,
+            'user_id' => $user->id,
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
         ]);
-
-        $this->assertDatabaseCount('reviews', 1);
     }
 
     /** @test */
